@@ -11,8 +11,6 @@ const ignoredMessages = [
 	/Failed to fetch/i,
 	// WebKit's wording for the same thing
 	/Load failed/i,
-	// the pumps GeoJSON, blocked together with the map
-	/pumps\.geojson/i,
 	/WebGL/i,
 	/GPU stall/i,
 	/does not exist in the map's style/i,

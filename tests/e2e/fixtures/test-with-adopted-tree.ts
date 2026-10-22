@@ -1,4 +1,4 @@
-import { babyTreeId } from "../constants";
+import { findTree } from "../trees";
 import { testWithLoggedInUser } from "./test-with-logged-in-user";
 import { adoptTree } from "./tree-data";
 
@@ -13,10 +13,11 @@ export const testWithAdoptedTree =
 	testWithLoggedInUser.extend<TestWithAdoptedTree>({
 		adoptedTreeId: [
 			async ({ account }, use) => {
-				await adoptTree({ account, treeId: babyTreeId });
+				const treeId = findTree("JUNIOR").id;
+				await adoptTree({ account, treeId });
 				// The adoption is removed with the account in the registered-user
 				// fixture's cleanup.
-				await use(babyTreeId);
+				await use(treeId);
 			},
 			{ scope: "test" },
 		],

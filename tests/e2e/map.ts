@@ -21,11 +21,7 @@ const emptyStyle = {
 	],
 };
 
-const pumpsSourceUrl = process.env.VITE_MAP_PUMPS_SOURCE_URL;
-
-const isMapboxRequest = (url: URL) =>
-	url.hostname.endsWith("mapbox.com") ||
-	(pumpsSourceUrl !== undefined && url.href.startsWith(pumpsSourceUrl));
+const isMapboxRequest = (url: URL) => url.hostname.endsWith("mapbox.com");
 
 /**
  * The map is mounted on every route (see `src/app.tsx`), so tests that never

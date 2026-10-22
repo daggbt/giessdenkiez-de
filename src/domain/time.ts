@@ -1,11 +1,14 @@
 import { city } from "../config/city";
 
 /**
- * The current instant. In dev builds a `?now=YYYY-MM-DD` URL parameter
+ * The current instant. In dev builds (and in the production-like builds used by
+ * the end-to-end tests, `VITE_PW_TEST=true`) a `?now=YYYY-MM-DD` URL parameter
  * overrides it, so the in-season UI can be tested outside the season.
  */
 export function getNow(): Date {
-	if (import.meta.env?.DEV && typeof window !== "undefined") {
+	const isOverrideAllowed =
+		import.meta.env?.DEV || import.meta.env?.VITE_PW_TEST === "true";
+	if (isOverrideAllowed && typeof window !== "undefined") {
 		const override = new URL(window.location.href).searchParams.get("now");
 		if (override && /^\d{4}-\d{2}-\d{2}$/.test(override)) {
 			// Midday in the city's time zone (UTC+8 in Perth) avoids edge effects.

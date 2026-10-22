@@ -6,10 +6,3 @@ export const defaultUsername = "username";
 
 /** localStorage key of the persisted zustand splash store. */
 export const splashStoreKey = "splash-store";
-
-/** Trees used by the fixtures/tests, picked per age classification. */
-export const babyTreeId = "00008100:002faeaf";
-
-/** Spitz-Ahorn 'Almira', planted 1994 - old enough to be waterable. */
-export const seniorTreeId = "00008100:00108e72";
-export const seniorTreeName = "Spitz-Ahorn 'Almira'";

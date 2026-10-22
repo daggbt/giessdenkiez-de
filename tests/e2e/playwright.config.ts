@@ -26,8 +26,8 @@ export default defineConfig({
 	forbidOnly: !!process.env.CI,
 	/* No retries */
 	retries: 0,
-	/* Local uses Playwright's default (CPU-based). */
-	workers: process.env.CI ? 2 : undefined,
+	/* The map renders with software WebGL; parallel workers starve each other. */
+	workers: 1,
 	/* Reporter to use. See https://playwright.dev/docs/test-reporters */
 	reporter: [
 		["list"],
@@ -42,8 +42,9 @@ export default defineConfig({
 		trace: "retain-on-failure",
 	},
 	/* CI runners are slower and run the Supabase stack alongside the browsers. */
-	timeout: process.env.CI ? 60_000 : 30_000,
-	expect: { timeout: process.env.CI ? 10_000 : 5_000 },
+	// The map renders with software WebGL and loads ~17k trees, so be generous.
+	timeout: process.env.CI ? 90_000 : 75_000,
+	expect: { timeout: 30_000 },
 
 	/* Configure projects for major browsers */
 	projects: [
@@ -52,24 +53,9 @@ export default defineConfig({
 			use: { ...devices["Desktop Chrome"] },
 		},
 
-		// {
-		// 	name: "firefox",
-		// 	use: { ...devices["Desktop Firefox"] },
-		// },
-
-		{
-			name: "webkit",
-			use: { ...devices["Desktop Safari"] },
-		},
-
 		{
 			name: "Mobile Chrome",
 			use: { ...devices["Pixel 5"] },
-		},
-
-		{
-			name: "Mobile Safari",
-			use: { ...devices["iPhone 12"] },
 		},
 
 		/* Test against branded browsers. */

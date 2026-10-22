@@ -122,6 +122,12 @@ export const useProfileStore = create<ProfileStore>()((set, get) => ({
 
 		await get().refreshAdoptedTrees();
 
+		// Nothing to look up for visitors who are logged out or have adopted nothing.
+		if (get().adoptedTrees.length === 0) {
+			set({ adoptedTreesInfo: [] });
+			return;
+		}
+
 		const { data, error } = await supabaseClient
 			.from("trees")
 			.select(

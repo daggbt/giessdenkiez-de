@@ -38,7 +38,6 @@ export async function waterTree({
 }) {
 	const { error } = await supabaseAdminClient.from("trees_watered").insert({
 		uuid: account.id,
-		username: account.username,
 		tree_id: treeId,
 		amount,
 		timestamp: timestamp.toISOString(),

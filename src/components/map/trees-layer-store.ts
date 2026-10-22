@@ -130,3 +130,10 @@ export const useTreesLayerStore = create<TreesLayerStore>()((set, get) => ({
 		source?.setData(get().data);
 	},
 }));
+
+// End-to-end tests read the computed tree state through this handle.
+if (import.meta.env.VITE_PW_TEST === "true" && typeof window !== "undefined") {
+	(
+		window as unknown as { __treesLayer: typeof useTreesLayerStore }
+	).__treesLayer = useTreesLayerStore;
+}
