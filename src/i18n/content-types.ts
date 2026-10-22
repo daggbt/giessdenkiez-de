@@ -1,20 +1,6 @@
-type TreeTypeId =
-	| "LINDE"
-	| "AHORN"
-	| "EICHE"
-	| "KASTANIE"
-	| "ROSSKASTANIE"
-	| "PLATANE"
-	| "ESCHE"
-	| "BIRKE"
-	| "ROBINIE"
-	| "ULME"
-	| "HASEL"
-	| "HAINBUCHE"
-	| "PAPPEL";
-
 interface TreeTypeInfo {
-	id: TreeTypeId;
+	/** The genus as in the `genus` column of the trees table, e.g. "Platanus". */
+	id: string;
 	title: string;
 	description: string;
 }
@@ -158,37 +144,38 @@ interface Info {
 
 interface WaterNeed {
 	title: string;
-	hintWinter: string;
+	hintOffSeason: (offSeasonMonths: string) => string;
 	hint: string;
 	needXLiters: (liters: string) => string;
-	needsOnlyOnDryDays: string;
-	waterManaged: string;
-	winterSleep: string;
-	managedByGroundwater: string;
-	unknown: string;
+	waterManagedBaby: string;
+	waterManagedSenior: string;
+	offSeasonTitle: string;
 	unknownTitle: string;
 	unknownShort: string;
-	seniorTitle: string;
-	seniorExplanation: string;
 	liters: string;
 	watered: string;
-	covered: string;
 	rained: string;
 	stillMissing: string;
 	dataOfLastXDays: string;
-	manager: string;
+	weatherUnavailable: string;
+	/** Legend label of the part of the ring covered by the City (young trees). */
+	coveredByCity: string;
+	/** Legend label of the part of the ring for established trees. */
+	coveredEstablished: string;
 	alreadyWateredByManager: string;
-	alreadyWateredByGroundwater: string;
-	winterNeedsNoWater: string;
+	alreadyWateredByEstablished: string;
+	offSeasonRing: string;
 	stillWaterXLiters: (liters: string) => string;
-	shouldBeWatered: string;
 	sufficientlyWatered: string;
-	ageAndWaterHintTitle: string;
-	ageAndWaterHint: string;
-	ageAndWaterHintWinter: string;
+	ageAndWaterHint: (
+		councilCareMaxYears: number,
+		needsHelpMaxYears: number,
+	) => string;
+	ageAndWaterHintOffSeason: (
+		seasonMonths: string,
+		offSeasonMonths: string,
+	) => string;
 	readMore: string;
-	lastXDaysYLitersWater: (days: number, liters: string) => string;
-	lastXDaysYLitersRain: (days: number, liters: string) => string;
 	close: string;
 	iWatered: string;
 	loginToWater: {
@@ -229,17 +216,31 @@ interface TreeDetail {
 	unadoptLoading: string;
 	isAdopted: string;
 	ageTitle: string;
+	planted: {
+		day: (date: string, ago: string) => string;
+		year: (year: string) => string;
+		beforeInventory: string;
+		unknown: string;
+	};
+	facts: {
+		suburb: string;
+		height: string;
+		heightValue: (metres: string) => string;
+		family: string;
+		rare: string;
+		heritage: string;
+		significant: string;
+		significantGroup: string;
+	};
 	adoptHintTitle: string;
 	adoptHint: string;
 	adoptErrorMessage: string;
 	adoptLoginFirst: string;
-	age: (age: number) => string;
-	ageUnknown: string;
 	treeTypeUnknown: string;
 	waterNeed: WaterNeed;
 	lastWaterings: LastWaterings;
 	problem: Problem;
-	managedBy: string;
+	managedBy: (councilCareMaxYears: number) => string;
 	treeTypeInfos: TreeTypeInfo[];
 	treeTypeInfoTitle: string;
 }

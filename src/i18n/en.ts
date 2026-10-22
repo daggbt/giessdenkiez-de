@@ -281,6 +281,22 @@ Use via smartphone (mobile network) can lead to performance problems (page loads
 		alsoAdoptedByOtherUsers: "Also adopted by other users",
 		onlyAdoptedByOtherUsers: "Adopted by other users",
 		ageTitle: "Age",
+		planted: {
+			day: (date: string, ago: string) => `Planted ${date} (${ago})`,
+			year: (year: string) => `Planted in ${year}`,
+			beforeInventory: `Planted before ${city.inventoryCaptureDate.slice(0, 4)}`,
+			unknown: "Planting date unknown",
+		},
+		facts: {
+			suburb: "Suburb",
+			height: "Height",
+			heightValue: (metres: string) => `${metres} m`,
+			family: "Family",
+			rare: "Rare species",
+			heritage: "Heritage",
+			significant: "Community significance",
+			significantGroup: "Significant group",
+		},
 		adoptLoading: "Tree is being adopted...",
 		unadoptLoading: "Adoption is being canceled...",
 		isAdopted: "You have adopted this tree",
@@ -289,73 +305,61 @@ Use via smartphone (mobile network) can lead to performance problems (page loads
 			"If you water this tree on a regular basis, you can adopt it. This way you can find it in your profile.",
 		adoptErrorMessage: "Error adopting the tree. Please try again.",
 		adoptLoginFirst: "Please log in first to adopt this tree",
-		age: (age: number) => `${age === 1 ? "year" : "years"}`,
-		ageUnknown: "Unknown",
 		treeTypeUnknown: "Tree species unknown",
-		managedBy:
-			"This tree is already being taken care of by the Berlin administration and does not need to be watered.",
+		managedBy: (councilCareMaxYears: number) =>
+			`The ${city.councilName} waters new trees for their first ${councilCareMaxYears} years, so this tree does not need your help yet.`,
 		waterNeed: {
-			title: "Water requirements",
-			hintWinter:
-				"Outside of the vegetation period (March-October), the trees do not require any water as they are practically in hibernation.",
+			title: "Water needs",
+			hintOffSeason: (offSeasonMonths: string) =>
+				`Outside the watering season (${offSeasonMonths}), rain usually covers the trees' needs.`,
 			hint: "Depending on the age of the tree, the need for water varies.",
-			needXLiters: (liters: string) => `Needs ${liters} liters per week`,
-			needsOnlyOnDryDays: "Only needs water on dry days",
-			waterManaged: "Supplied, only in need during dry periods",
-			winterSleep: "The trees are currently in hibernation",
-			managedByGroundwater: "Groundwater",
+			needXLiters: (liters: string) =>
+				`Needs ${liters} litres over 30 days (rain counts)`,
+			waterManagedBaby: "Watered by the City",
+			waterManagedSenior: "Established tree",
+			offSeasonTitle: "Outside the watering season",
 			unknownTitle: "Water needs **unknown**",
-			unknown:
-				"The age and therefore the water requirement are unfortunately unknown. The info box may help you make your own assessment.",
 			unknownShort: "Unknown",
-			seniorTitle: "Needs water only during dry periods",
-			seniorExplanation:
-				"Older trees can usually supply themselves with groundwater, but as the heat increases they also appreciate additional water.",
-			liters: "liters",
+			liters: "litres",
 			watered: "watered",
-			covered: "covered",
 			rained: "rain",
 			stillMissing: "still missing",
 			dataOfLastXDays: "* data of last 30 days",
-			manager: "district",
-			alreadyWateredByManager: "Watered by **district authority**",
-			alreadyWateredByGroundwater: "Covered by **groundwater**",
-			winterNeedsNoWater: "No water needed in winter",
+			weatherUnavailable:
+				"Rain data currently unavailable \u2014 showing waterings only.",
+			coveredByCity: "Watered by the City",
+			coveredEstablished: "Established",
+			alreadyWateredByManager: `Watered by the **${city.councilName}**`,
+			alreadyWateredByEstablished: "**Established** tree",
+			offSeasonRing: "No watering needed outside the season",
 			stillWaterXLiters: (liters: string) => `
 Needs
 
-**${liters} liters**`,
-			shouldBeWatered: "Should be watered",
+**${liters} litres**`,
 			sufficientlyWatered: "Sufficiently watered at the moment",
+			ageAndWaterHint: (
+				councilCareMaxYears: number,
+				needsHelpMaxYears: number,
+			) => `
+**Under ${councilCareMaxYears} years**: the ${city.councilName} waters new trees ([source: City of Perth Urban Forest FAQ](https://engage.perth.wa.gov.au/urban-forest-plan/faqs)).
+
+**${councilCareMaxYears}\u2013${needsHelpMaxYears} years**: these trees benefit most from your help.
+
+**Older trees (${needsHelpMaxYears}+ years)**: usually established.`,
+			ageAndWaterHintOffSeason: (
+				seasonMonths: string,
+				offSeasonMonths: string,
+			) => `
+The watering season is ${seasonMonths}. Outside the season (${offSeasonMonths}) rain usually covers the trees' needs.`,
 			readMore: "Show more",
-			ageAndWaterHintTitle: "Water requirements and age",
-			ageAndWaterHint: `
-Particularly young trees need water in the first few years. Rather less often, but a lot at once.
-
-**Below 5 years**: We are taken care of by the district green space office.
-
-**5-10 years**: At this age, we are no longer watered by the administration in all districts and are not yet "self-sufficient". We are thankful for some extra water, especially in dry times - preferably less often, but a lot at once (approx. 100-200 liters per month).
-
-**Older trees (10+ years)**: We can supply ourselves via the groundwater.`,
-			ageAndWaterHintWinter: `
-When the trees lose more of their leaves in autumn, their photosynthetic processes also decrease, and they need less energy—and therefore less water.
-With the official end of the vegetation period, the watering season also comes to an end for this year. Starting in March, it will pick up again! We Can!
-
-**Water needs during the vegetation period (March-October)**:
-
-`,
 			close: "Show less",
-			lastXDaysYLitersWater: (days: number, liters: string) =>
-				`In the last ${days} days, **${liters} liters** were watered.`,
-			lastXDaysYLitersRain: (days: number, liters: string) =>
-				`In the last ${days} days, it rained **${liters} liters**.`,
 			iWatered: "I watered",
 			loginToWater: {
 				login: "Log-in",
 				toWater: "to submit a watering",
 			},
 			submitWatering: "Submit watering",
-			wateredHowMuch: "Liters",
+			wateredHowMuch: "Litres",
 			wateredHowMuchPlaceholder: "Amount in L",
 			wateredWhen: "When?",
 			waterSave: "Save",
@@ -363,7 +367,7 @@ With the official end of the vegetation period, the watering season also comes t
 			wateringSuccessful: "Your watering entry was successful!",
 		},
 		lastWaterings: {
-			deletedAccount: "Deactivated Account",
+			deletedAccount: "Former user",
 			title: "Last waterings",
 			last30Days: "Last 30 days",
 			nothingLast30Days: "No waterings in the last 30 days",
@@ -373,88 +377,82 @@ With the official end of the vegetation period, the watering season also comes t
 		},
 		problem: {
 			title: "Report a problem",
-			description:
-				"Have you discovered tree damage or is the tree disk being misused? Tell the public order office:",
-			link: "To the official form",
+			description: `Noticed damage or a problem with this tree? Report it to the ${city.councilName}.`,
+			link: `Contact the ${city.councilName}`,
 		},
+		// TODO(confirm): species text drafted by agent, needs review (Q10)
 		treeTypeInfos: [
 			{
-				id: "LINDE",
-				title: "Linden (Tilia)",
+				id: "Eucalyptus",
+				title: "Eucalyptus (gum trees)",
 				description:
-					"The lime tree has been the typical street tree in Berlin for years. With a share of a good third, it characterizes the street tree population. A total of 10 different species can be distinguished. The winter lime tree (Tilia cordata), a medium-sized tree that also finds room in narrower streets, is the preferred tree. The large-crowned imperial lime (Tilia intermedia), on the other hand, is reserved for wide avenues.",
+					"Eucalyptus is a large genus of mostly Australian trees, including many gums. Several species are native to Western Australia, and they are widely planted as street and park trees.",
 			},
 			{
-				id: "AHORN",
-				title: "Maple (Acer)",
-				description:
-					"The maple genus comprises approx. 20% of the total stock. The Norway maple (Acer platanoides) is particularly suitable for the street location. The early flowering and the colorful autumn coloring make the maple a particularly popular tree species.",
-			},
-			{
-				id: "EICHE",
-				title: "Oak (Quercus)",
-				description:
-					"Oaks make up around 9% of the total stock. In Berlin, it is mainly the common oak (Quercus robur) that is planted. As a light tree, the oak is not suitable for narrow streets. The most recent avenues in the parliamentary and government district were planted with the so-called Spree oak (Quercus palustris), which is characterized by its particularly beautiful autumn colouring, among other things.",
-			},
-			{
-				id: "PLATANE",
+				id: "Platanus",
 				title: "Plane tree (Platanus)",
 				description:
-					"An ideal avenue tree for wide streets is the plane tree (Platanus acerifolia), which in addition to a height of 20 to 30 m can also reach a stately crown diameter of 15 to 20 m. Sycamore trees make up around 6% of the total population. The best-known and, at over 120 years old, oldest plane tree avenue in Berlin is Puschkinallee in Berlin-Treptow.",
+					"Plane trees are deciduous trees originally from the Northern Hemisphere. The London plane (Platanus \u00d7 acerifolia) is a hybrid that is planted in streets in cities around the world because it copes well with urban conditions. It loses its leaves in autumn.",
 			},
 			{
-				id: "KASTANIE",
-				title: "Chestnut (Aesculus)",
+				id: "Corymbia",
+				title: "Bloodwood and spotted gum (Corymbia)",
 				description:
-					"The chestnut (Aesculus) accounts for around 5% of the total population, putting it in fifth place among Berlin's street trees. Horse chestnuts have five- and multi-lobed leaves that resemble the fingers of a hand; sweet chestnuts have single leaves that are also clearly serrated.",
+					"Corymbia was split off from Eucalyptus and is also Australian. Marri (Corymbia calophylla) is native to the south-west of Western Australia.",
 			},
 			{
-				id: "ROSSKASTANIE",
-				title: "Horse chestnut (Aesculus hippocastanum)",
+				id: "Melaleuca",
+				title: "Paperbark (Melaleuca)",
 				description:
-					"The horse chestnut (Aesculus hippocastanum) accounts for around 5% of the total population, making it the fifth most popular street tree in Berlin. Horse chestnuts have five- and multi-lobed leaves that resemble the fingers of a hand; sweet chestnuts have single leaves that are also clearly serrated.",
+					"Melaleucas, or paperbarks, are Australian trees and shrubs with papery, layered bark. Many species grow naturally near wetlands and watercourses, and several are native to Western Australia.",
 			},
 			{
-				id: "ESCHE",
-				title: "Ash (Fraxinus)",
+				id: "Jacaranda",
+				title: "Jacaranda",
 				description:
-					"The ash tree (Fraxinus) accounts for approx. 3% of the total population and thus occupies sixth place among Berlin's street trees. With a height of up to 40 m, it is one of the tallest deciduous trees in Europe.",
+					"The jacaranda (Jacaranda mimosifolia) comes from South America and is planted in warm climates around the world. It is known for its purple flowers in late spring. It is not native to Australia.",
 			},
 			{
-				id: "BIRKE",
-				title: "Birch (Betula)",
+				id: "Lophostemon",
+				title: "Brisbane box (Lophostemon)",
 				description:
-					"The birch (Betula) accounts for around 3% of the total population. Although the birch is a pioneer tree that is very undemanding and grows on any soil, it is less suitable as a street tree as the tree grates often offer too little space for the shallow-rooted trees.",
+					"The Brisbane box (Lophostemon confertus) is native to eastern Australia and is a common evergreen street tree in Australian cities.",
 			},
 			{
-				id: "ROBINIE",
-				title: "Robinia (Robinia)",
+				id: "Agonis",
+				title: "Peppermint tree (Agonis)",
 				description:
-					"The Robinia (Robinia) accounts for around 2% of the total population. It was cultivated as a park tree in Berlin's Lustgarten from 1672 and is now very common throughout Berlin. The Robinia has low demands on the soil and, thanks to the nodule bacteria on its roots, it can bind atmospheric nitrogen and thus fertilize the soil.",
+					"The peppermint tree (Agonis flexuosa) is native to the south-west of Western Australia. It is widely planted in streets and gardens and has a weeping habit and peppermint-scented leaves.",
 			},
 			{
-				id: "HASEL",
-				title: "Hazel tree (Corylus)",
+				id: "Casuarina",
+				title: "She-oak (Casuarina)",
 				description:
-					"The hazel tree (Corylus) accounts for around 2% of the total population, making it the ninth most common street tree in Berlin. The hazelnut grows as a shrub or small tree up to 6 m high.",
+					"She-oaks are Australian evergreen trees with needle-like green branchlets instead of ordinary leaves. They are often planted as street and park trees.",
 			},
 			{
-				id: "HAINBUCHE",
-				title: "Hornbeam (Carpinus)",
+				id: "Phoenix",
+				title: "Date palm (Phoenix)",
 				description:
-					"The proportion of hornbeams (Carpinus) is around 2% of the total population. The tree reaches a height of up to 25 meters. The crown is initially slightly conical and later expands widely.",
+					"Phoenix is a genus of palms. The Canary Island date palm (Phoenix canariensis), originally from the Canary Islands, is a large feather-leaved palm that is widely planted along streets.",
 			},
 			{
-				id: "PAPPEL",
-				title: "Poplar (Populus)",
+				id: "Ficus",
+				title: "Fig (Ficus)",
 				description:
-					"The poplar (Populus) accounts for around 2% of Berlin's total population. They have ovoid to triangular, sometimes heart-shaped leaves.",
+					"Ficus, the figs, is a large genus of trees found in warm regions around the world. Several species are planted in Australian cities as large shade trees.",
 			},
 			{
-				id: "ULME",
-				title: "Elm (Ulmus)",
+				id: "Washingtonia",
+				title: "Fan palm (Washingtonia)",
 				description:
-					"Elms (Ulmus) make up around 2% of the total population. There are three of the world's 45 species of this deciduous deciduous tree: the mountain elm, the field elm and the elm tree. It grows up to 600 meters high and can live to be 250 years old.",
+					"Washingtonia palms come from the south-western United States and Mexico and have large fan-shaped leaves. They are widely planted along streets in warm climates.",
+			},
+			{
+				id: "Callistemon",
+				title: "Bottlebrush (Callistemon)",
+				description:
+					"Bottlebrushes are Australian shrubs and small trees named for their bottle-brush shaped flowers. They are popular street and garden plants.",
 			},
 		],
 		treeTypeInfoTitle: "Tree profile",

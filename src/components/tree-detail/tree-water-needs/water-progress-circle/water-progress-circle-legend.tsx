@@ -50,11 +50,10 @@ export const WaterProgressCircleLegend: React.FC<WaterCircleLegendProps> = ({
 			{treeAgeClassification === TreeAgeClassification.BABY && (
 				<div className="flex flex-row items-center gap-4">
 					<div
-						className={`h-8 min-h-8 w-3 min-w-3 rounded-full bg-gdk-distric-watering-green self-start translate-y-3`}
+						className={`h-8 min-h-8 w-3 min-w-3 rounded-full bg-gdk-distric-watering-green`}
 					/>
-					<div className="flex flex-col">
-						<div className="font-bold">{i18n.treeDetail.waterNeed.manager}</div>
-						<div>{i18n.treeDetail.waterNeed.watered}</div>
+					<div className="font-bold">
+						{i18n.treeDetail.waterNeed.coveredByCity}
 					</div>
 				</div>
 			)}
@@ -64,11 +63,8 @@ export const WaterProgressCircleLegend: React.FC<WaterCircleLegendProps> = ({
 					<div
 						className={`h-8 min-h-8 w-3 min-w-3 rounded-full bg-gdk-groundwater-blue`}
 					/>
-					<div className="flex flex-col">
-						<div className="font-bold">
-							{i18n.treeDetail.waterNeed.managedByGroundwater}
-						</div>
-						<div>{i18n.treeDetail.waterNeed.covered}</div>
+					<div className="font-bold">
+						{i18n.treeDetail.waterNeed.coveredEstablished}
 					</div>
 				</div>
 			)}

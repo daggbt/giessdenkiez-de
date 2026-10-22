@@ -20,7 +20,7 @@ export const WaterTree: React.FC<WaterTreeProps> = ({
 	const { isLoggedIn } = useAuthStore();
 
 	/**
-	 * Baby trees are watered by the district (see the hint above the button), so
+	 * Baby trees are watered by the City (see the hint above the button), so
 	 * the button is shown but cannot be used.
 	 */
 	const isBabyTree = treeAgeClassification === TreeAgeClassification.BABY;

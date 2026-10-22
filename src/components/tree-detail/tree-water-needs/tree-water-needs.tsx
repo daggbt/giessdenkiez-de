@@ -14,6 +14,7 @@ import { WaterNeedsHint } from "./water-needs-hint";
 import { WaterNeedsTitle } from "./water-needs-title";
 import { WaterTree } from "./water-tree/water-tree";
 import { WaterProgressCircleWinter } from "./water-progress-circle/water-progress-circle-winter";
+import { useWeatherStore } from "../../../weather/weather-store";
 import { useIsInWateringSeason } from "../../../utils/use-is-in-watering-season";
 
 interface TreeWaterNeedProps {
@@ -31,6 +32,9 @@ export const TreeWaterNeed: React.FC<TreeWaterNeedProps> = ({
 
 	const isInWateringSeason = useIsInWateringSeason();
 
+	const weatherStatus = useWeatherStore((store) => store.status);
+	const rain30dMm = useWeatherStore((store) => store.rain30dMm);
+
 	const [isExpanded, setIsExpanded] = useState(true);
 
 	const {
@@ -40,7 +44,7 @@ export const TreeWaterNeed: React.FC<TreeWaterNeedProps> = ({
 		stillMissingWater,
 		waterParts,
 		shouldBeWatered,
-	} = useTreeWaterNeedsData(treeWateringData, treeAgeClassification, 0); // TODO(M4): rain from weather store;
+	} = useTreeWaterNeedsData(treeWateringData, treeAgeClassification, rain30dMm);
 
 	return (
 		<div className="flex flex-col gap-4 border-b-2 py-8">
@@ -82,6 +86,12 @@ export const TreeWaterNeed: React.FC<TreeWaterNeedProps> = ({
 					{isInWateringSeason && (
 						<div className="font-bold">
 							{i18n.treeDetail.waterNeed.dataOfLastXDays}
+						</div>
+					)}
+
+					{isInWateringSeason && weatherStatus === "error" && (
+						<div className="text-sm text-slate-500">
+							{i18n.treeDetail.waterNeed.weatherUnavailable}
 						</div>
 					)}
 

@@ -18,7 +18,7 @@ export const WaterProgressCircleWinter: React.FC = () => {
 			</svg>
 			<div className="absolute text-xl text-center w-52">
 				<Markdown className="m-12">
-					{i18n.treeDetail.waterNeed.winterNeedsNoWater}
+					{i18n.treeDetail.waterNeed.offSeasonRing}
 				</Markdown>
 			</div>
 		</div>

@@ -26,3 +26,40 @@ export function isInWateringSeason(
 		? today >= start && today <= end
 		: today >= start || today <= end;
 }
+
+export interface MonthRange {
+	/** 1-based month numbers, inclusive; may wrap over New Year. */
+	start: number;
+	end: number;
+}
+
+/**
+ * The months inside and outside the season. Assumes the season starts and
+ * ends at month boundaries, which is how the city config is meant to be used.
+ */
+export function getSeasonMonths(season: WateringSeason = city.wateringSeason): {
+	season: MonthRange;
+	offSeason: MonthRange;
+} {
+	return {
+		season: { start: season.start.month, end: season.end.month },
+		offSeason: {
+			start: (season.end.month % 12) + 1,
+			end: ((season.start.month + 10) % 12) + 1,
+		},
+	};
+}
+
+/** "November–April" */
+export function formatMonthRange(
+	range: MonthRange,
+	locale: string = city.locale,
+): string {
+	const formatter = new Intl.DateTimeFormat(locale, {
+		month: "long",
+		timeZone: "UTC",
+	});
+	const name = (month: number) =>
+		formatter.format(new Date(Date.UTC(2000, month - 1, 1)));
+	return `${name(range.start)}\u2013${name(range.end)}`;
+}

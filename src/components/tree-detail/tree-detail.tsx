@@ -3,6 +3,7 @@ import { CloseIcon } from "../icons/close-icon";
 import { useUrlState } from "../router/store";
 import { useFetchTreeData } from "./hooks/use-fetch-tree-data";
 import { TreeAge } from "./tree-age";
+import { TreeFacts } from "./tree-facts";
 import { TreeAdoptCard } from "./tree-adopt-card";
 import { useTreeStore } from "./stores/tree-store";
 import { useI18nStore } from "../../i18n/i18n-store";
@@ -39,8 +40,7 @@ export const TreeDetail: React.FC = () => {
 
 	useFetchTreeData(treeId);
 
-	const { treeAge, treeAgeClassification } =
-		useTreeAgeClassification(treeCoreData);
+	const { treeAgeClassification } = useTreeAgeClassification(treeCoreData);
 	const treeTypeInfo = useMemo(() => {
 		return i18n.treeDetail.treeTypeInfos.find(
 			(treeType) => treeType.id === treeCoreData?.genus,
@@ -78,7 +78,8 @@ export const TreeDetail: React.FC = () => {
 					{treeTypeInfo && (
 						<TreeFlier info={treeTypeInfo.description}></TreeFlier>
 					)}
-					<TreeAge treeAge={treeAge} />
+					<TreeAge treeData={treeCoreData} />
+					<TreeFacts treeData={treeCoreData} />
 
 					<TreeWaterNeed
 						treeData={treeCoreData}

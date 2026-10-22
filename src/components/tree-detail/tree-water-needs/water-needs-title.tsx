@@ -22,15 +22,21 @@ export const WaterNeedsTitle: React.FC<WaterNeedsTitleProps> = ({
 		<div>
 			{!isInWateringSeason && (
 				<div className="text-xl font-bold ">
-					{i18n.treeDetail.waterNeed.winterSleep}
+					{i18n.treeDetail.waterNeed.offSeasonTitle}
 				</div>
 			)}
 
 			{isInWateringSeason &&
-				(treeAgeClassification === TreeAgeClassification.BABY ||
-					treeAgeClassification === TreeAgeClassification.SENIOR) && (
+				treeAgeClassification === TreeAgeClassification.BABY && (
 					<div className="text-xl font-bold">
-						{i18n.treeDetail.waterNeed.waterManaged}
+						{i18n.treeDetail.waterNeed.waterManagedBaby}
+					</div>
+				)}
+
+			{isInWateringSeason &&
+				treeAgeClassification === TreeAgeClassification.SENIOR && (
+					<div className="text-xl font-bold">
+						{i18n.treeDetail.waterNeed.waterManagedSenior}
 					</div>
 				)}
 

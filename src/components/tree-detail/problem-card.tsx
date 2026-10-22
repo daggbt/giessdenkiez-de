@@ -2,6 +2,7 @@ import React from "react";
 import { useI18nStore } from "../../i18n/i18n-store";
 import { ExternalAnchorLink } from "../anchor-link/external-anchor-link";
 import { AttentionIcon } from "../icons/attention-icon";
+import { city } from "../../config/city";
 
 export const ProblemCard: React.FC = () => {
 	const i18n = useI18nStore().i18n();
@@ -19,7 +20,7 @@ export const ProblemCard: React.FC = () => {
 					<div>{i18n.treeDetail.problem.description}</div>
 					<div>
 						<ExternalAnchorLink
-							href="https://ordnungsamt.berlin.de/frontend/meldungNeu/wo"
+							href={city.reportProblemUrl}
 							label={i18n.treeDetail.problem.link}
 						/>
 					</div>

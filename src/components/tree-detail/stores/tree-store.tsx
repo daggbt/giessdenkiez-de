@@ -3,6 +3,24 @@ import { TreeCoreData, TreeWateringData } from "../tree-types";
 import { useTreeAdoptStore } from "./adopt-tree-store";
 import { supabaseClient } from "../../../auth/supabase-client";
 
+const TREE_CORE_COLUMNS = [
+	"id",
+	"botanical_name",
+	"common_name",
+	"family",
+	"genus",
+	"planted_date",
+	"planted_date_precision",
+	"suburb",
+	"height_m",
+	"is_rare",
+	"is_heritage",
+	"is_significant",
+	"is_significant_group",
+	"lat",
+	"lng",
+].join(", ");
+
 interface TreeStore {
 	refreshTreeData: (
 		treeId: string | undefined,
@@ -60,7 +78,7 @@ export const useTreeStore = create<TreeStore>()((set, get) => ({
 
 		const { data, error } = await supabaseClient
 			.from("trees")
-			.select("*")
+			.select(TREE_CORE_COLUMNS)
 			.eq("id", treeId)
 			.abortSignal(abortController.signal);
 
@@ -68,7 +86,7 @@ export const useTreeStore = create<TreeStore>()((set, get) => ({
 			throw new Error("Failed to fetch tree core data");
 		}
 
-		const treeCoreData = data[0];
+		const treeCoreData = data[0] as unknown as TreeCoreData | undefined;
 		get().setTreeCoreData(treeCoreData);
 	},
 

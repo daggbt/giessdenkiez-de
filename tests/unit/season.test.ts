@@ -1,5 +1,9 @@
 import { describe, expect, test } from "vitest";
-import { isInWateringSeason } from "../../src/domain/season";
+import {
+	formatMonthRange,
+	getSeasonMonths,
+	isInWateringSeason,
+} from "../../src/domain/season";
 import { toCityDateString } from "../../src/domain/time";
 
 // 12:00 Perth time (UTC+8, no DST) on the given date
@@ -42,5 +46,25 @@ describe("toCityDateString", () => {
 		expect(toCityDateString(new Date("2026-10-31T15:59:00Z"))).toBe(
 			"2026-10-31",
 		);
+	});
+});
+
+describe("getSeasonMonths / formatMonthRange", () => {
+	test("the off season is the complement of the season", () => {
+		expect(getSeasonMonths()).toEqual({
+			season: { start: 11, end: 4 },
+			offSeason: { start: 5, end: 10 },
+		});
+		expect(
+			getSeasonMonths({
+				start: { month: 3, day: 1 },
+				end: { month: 10, day: 31 },
+			}).offSeason,
+		).toEqual({ start: 11, end: 2 });
+	});
+
+	test("formats month names in en-AU", () => {
+		expect(formatMonthRange({ start: 5, end: 10 })).toBe("May–October");
+		expect(formatMonthRange({ start: 11, end: 4 })).toBe("November–April");
 	});
 });

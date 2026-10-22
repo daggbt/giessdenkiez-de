@@ -77,6 +77,5 @@ export interface WaterCircleProps {
 }
 
 export interface TreeAgeClassificationState {
-	treeAge: number | undefined;
 	treeAgeClassification: TreeAgeClassification;
 }

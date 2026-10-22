@@ -21,7 +21,7 @@ export const WaterProgressCircle: React.FC<WaterCircleProps> = ({
 			return i18n.treeDetail.waterNeed.alreadyWateredByManager;
 		}
 		if (treeAgeClassification === TreeAgeClassification.SENIOR) {
-			return i18n.treeDetail.waterNeed.alreadyWateredByGroundwater;
+			return i18n.treeDetail.waterNeed.alreadyWateredByEstablished;
 		}
 		if (treeAgeClassification === TreeAgeClassification.JUNIOR) {
 			if (shouldBeWatered) {

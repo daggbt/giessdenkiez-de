@@ -7,6 +7,7 @@ import { Tooltip as AdoptTreeTooltip } from "./tree-water-needs/tooltip";
 import { TreeAgeClassification, TreeCoreData } from "./tree-types";
 import { InternalAnchorLink } from "../anchor-link/internal-anchor-link";
 import { InfoIcon } from "../icons/info-icon";
+import { city } from "../../config/city";
 
 interface TreeAdoptCardProps {
 	treeData: TreeCoreData;
@@ -52,10 +53,20 @@ export const TreeAdoptCard: React.FC<TreeAdoptCardProps> = ({
 	return (
 		<div className="shadow-gdk-hard flex flex-col gap-4 rounded-lg bg-slate-100 p-4">
 			<div className="flex flex-row items-center justify-between text-xl">
-				<div className="font-bold">
-					{treeData.common_name ??
-						treeData.botanical_name ??
-						i18n.treeDetail.treeTypeUnknown}
+				<div className="flex flex-col">
+					<div className="font-bold">
+						{treeData.common_name ??
+							treeData.botanical_name ??
+							i18n.treeDetail.treeTypeUnknown}
+					</div>
+					{treeData.common_name && treeData.botanical_name && (
+						<div className="text-base italic text-slate-500">
+							{treeData.botanical_name}
+						</div>
+					)}
+					{treeData.family && (
+						<div className="text-sm text-slate-500">{treeData.family}</div>
+					)}
 				</div>
 				<AdoptButton treeId={treeData.id}></AdoptButton>
 			</div>
@@ -120,7 +131,9 @@ export const TreeAdoptCard: React.FC<TreeAdoptCardProps> = ({
 				)}
 
 				{treeAgeClassification === TreeAgeClassification.BABY && (
-					<div>{i18n.treeDetail.managedBy}</div>
+					<div>
+						{i18n.treeDetail.managedBy(city.ageBands.councilCareMaxYears)}
+					</div>
 				)}
 			</div>
 		</div>

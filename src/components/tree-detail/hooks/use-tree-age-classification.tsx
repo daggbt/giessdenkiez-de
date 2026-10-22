@@ -7,15 +7,10 @@ export function useTreeAgeClassification(
 	referenceDate: Date = getNow(),
 ): TreeAgeClassificationState {
 	if (!treeData) {
-		return { treeAgeClassification: "UNKNOWN", treeAge: undefined };
+		return { treeAgeClassification: "UNKNOWN" };
 	}
 
 	const { ageYears, isLowerBound } = getTreeAge(treeData, referenceDate);
 
-	return {
-		treeAgeClassification: classifyAgeYears(ageYears, isLowerBound),
-		// A lower bound ("before 2019") is not a real age.
-		treeAge:
-			ageYears === null || isLowerBound ? undefined : Math.floor(ageYears),
-	};
+	return { treeAgeClassification: classifyAgeYears(ageYears, isLowerBound) };
 }
