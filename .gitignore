@@ -33,3 +33,5 @@ dist-ssr
 # Import script output
 /data/
 .DS_Store
+
+docs/
