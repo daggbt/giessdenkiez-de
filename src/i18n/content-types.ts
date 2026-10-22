@@ -190,6 +190,8 @@ interface WaterNeed {
 	waterSave: string;
 	waterCancel: string;
 	wateringSuccessful: string;
+	wateringFailed: string;
+	savedButNotRefreshed: string;
 }
 
 interface Problem {

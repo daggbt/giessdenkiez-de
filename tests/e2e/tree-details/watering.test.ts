@@ -65,6 +65,75 @@ testWithLoggedInUser.describe("Watering a tree", () => {
 	);
 
 	testWithLoggedInUser(
+		"should keep the entry and say so when the watering is not saved",
+		async ({ page }) => {
+			const tree = findTree("JUNIOR", { now: IN_SEASON_NOW });
+			await page.goto(`/map?now=${IN_SEASON_DATE}&treeId=${tree.id}`);
+
+			// The connection drops while the watering is sent.
+			await page.route("**/rest/v1/trees_watered*", (route) =>
+				route.request().method() === "POST"
+					? route.abort("internetdisconnected")
+					: route.fallback(),
+			);
+
+			await page.getByTestId("water-tree-button").click();
+			await page.getByRole("spinbutton").fill("30");
+			await page.getByRole("button", { name: "Save" }).click();
+
+			await expect(page.getByRole("alert")).toContainText("could not be saved");
+			await expect(page.getByRole("spinbutton")).toHaveValue("30");
+			await expect(
+				page.getByText("Your watering entry was successful!"),
+			).toBeHidden();
+
+			// Back online, the same entry can be sent again.
+			await page.unroute("**/rest/v1/trees_watered*");
+			await page.getByRole("button", { name: "Save" }).click();
+
+			await expect(
+				page.getByText("Your watering entry was successful!"),
+			).toBeVisible();
+			await expect(page.getByText("30l")).toBeVisible();
+			await expect
+				.poll(() => readTreeState(page, tree.id))
+				.toMatchObject({ need: "PARTIAL", watered_30d_l: 30 });
+		},
+	);
+
+	testWithLoggedInUser(
+		"should report a saved watering that cannot be shown yet",
+		async ({ page }) => {
+			const tree = findTree("JUNIOR", { now: IN_SEASON_NOW });
+			const panelWaterings = page.waitForResponse(
+				"**/rest/v1/rpc/waterings_for_tree*",
+			);
+			await page.goto(`/map?now=${IN_SEASON_DATE}&treeId=${tree.id}`);
+			await panelWaterings;
+
+			// The watering is saved, but reloading the tree's waterings fails.
+			await page.route("**/rest/v1/rpc/waterings_for_tree*", (route) =>
+				route.abort("internetdisconnected"),
+			);
+
+			await page.getByTestId("water-tree-button").click();
+			await page.getByRole("spinbutton").fill("20");
+			await page.getByRole("button", { name: "Save" }).click();
+
+			await expect(
+				page.getByText("Your watering entry was successful!"),
+			).toBeVisible();
+			await expect(
+				page.getByText("saved, but the screen could not be updated"),
+			).toBeVisible();
+			// The map is updated from its own data.
+			await expect
+				.poll(() => readTreeState(page, tree.id))
+				.toMatchObject({ watered_30d_l: 20 });
+		},
+	);
+
+	testWithLoggedInUser(
 		"should not accept more than the maximum amount",
 		async ({ page }) => {
 			const tree = findTree("SENIOR");

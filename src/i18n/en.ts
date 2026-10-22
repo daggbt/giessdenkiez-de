@@ -339,6 +339,10 @@ The watering season is ${seasonMonths}. Outside the season (${offSeasonMonths}) 
 			waterSave: "Save",
 			waterCancel: "Cancel",
 			wateringSuccessful: "Your watering entry was successful!",
+			wateringFailed:
+				"Your watering could not be saved. Please check your connection and try again.",
+			savedButNotRefreshed:
+				"Your change was saved, but the screen could not be updated. Reload the page to see it.",
 		},
 		lastWaterings: {
 			deletedAccount: "Former user",

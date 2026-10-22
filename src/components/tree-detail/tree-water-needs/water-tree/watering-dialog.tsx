@@ -1,8 +1,7 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { useI18nStore } from "../../../../i18n/i18n-store";
 import { PrimaryButton } from "../../../buttons/primary";
 import { useWaterTree } from "../../hooks/use-water-tree";
-import { useErrorStore } from "../../../../error/error-store";
 import { TertiaryButton } from "../../../buttons/tertiary";
 import { CloseIcon } from "../../../icons/close-icon";
 import { city } from "../../../../config/city";
@@ -29,7 +28,6 @@ const closeWateringDialog = () => {
 export const WateringDialog: React.FC = () => {
 	const i18n = useI18nStore().i18n();
 	const { waterTree } = useWaterTree();
-	const { handleError } = useErrorStore();
 	// Dates are entered in city time. This is deliberately the real date, not the
 	// `?now=` development override: the database rejects waterings from the future.
 	const formattedToday = toCityDateString(new Date());
@@ -38,36 +36,39 @@ export const WateringDialog: React.FC = () => {
 		setIsWateringLoading,
 		isWateringLoading,
 	} = useTreeStore();
+	const [saveError, setSaveError] = useState<string>();
 
-	const onSubmit = useCallback(
-		async (e: React.FormEvent<HTMLFormElement>) => {
-			e.preventDefault();
+	const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+		e.preventDefault();
 
-			const amount = Number(e.currentTarget.amount.value);
-			const enteredDate: string = e.currentTarget.date.value;
-			// Today keeps the exact time, past days are recorded at midday.
-			const date =
-				enteredDate === toCityDateString(new Date())
-					? new Date()
-					: cityDateToInstant(enteredDate);
+		const amount = Number(e.currentTarget.amount.value);
+		const enteredDate: string = e.currentTarget.date.value;
+		// Today keeps the exact time, past days are recorded at midday.
+		const date =
+			enteredDate === toCityDateString(new Date())
+				? new Date()
+				: cityDateToInstant(enteredDate);
 
-			try {
-				setIsWateringLoading(true);
-				await waterTree(amount, date);
-				setIsWateringLoading(false);
-				showHideWateringSuccessDialog();
-				// wait for the dialog to close before expanding the last waterings
-				setTimeout(() => {
-					setIsLastWateringsExpanded(true);
-				}, 2000);
-			} catch (error) {
-				setIsWateringLoading(false);
-				handleError("Failed to water the tree.", error);
-			}
-			closeWateringDialog();
-		},
-		[i18n],
-	);
+		setSaveError(undefined);
+		setIsWateringLoading(true);
+		try {
+			await waterTree(amount, date);
+		} catch (error) {
+			console.error(error);
+			// The dialog stays open with what was entered, so it can be sent again.
+			setSaveError(i18n.treeDetail.waterNeed.wateringFailed);
+			return;
+		} finally {
+			setIsWateringLoading(false);
+		}
+
+		closeWateringDialog();
+		showHideWateringSuccessDialog();
+		// wait for the dialog to close before expanding the last waterings
+		setTimeout(() => {
+			setIsLastWateringsExpanded(true);
+		}, 2000);
+	};
 
 	const onDialogClick = useCallback(
 		(event: React.MouseEvent<HTMLDialogElement, MouseEvent>) => {
@@ -88,6 +89,7 @@ export const WateringDialog: React.FC = () => {
 				id="water-dialog"
 				className="flex-col rounded-lg w-11/12 sm:w-[400px] backdrop:backdrop-brightness-90"
 				onClick={onDialogClick}
+				onClose={() => setSaveError(undefined)}
 			>
 				<div className="grid grid-cols-1">
 					<form
@@ -128,6 +130,11 @@ export const WateringDialog: React.FC = () => {
 									max={formattedToday}
 								/>
 							</div>
+							{saveError && (
+								<p role="alert" className="font-semibold text-gdk-dark-red">
+									{saveError}
+								</p>
+							)}
 							<div className="flex flex-col-reverse sm:flex-row justify-between gap-x-4">
 								<div className="p-y-3.5 flex self-center">
 									<TertiaryButton
