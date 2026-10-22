@@ -199,7 +199,9 @@ testWithRegisteredUser.describe("Register - Server-Side Validation", () => {
 			await page.getByLabel("Password").fill(account.password);
 			await page.getByLabel("Password").press("Enter");
 
-			await expect(page.getByText("Please check your input")).toBeVisible();
+			await expect(
+				page.getByText("An account with this email already exists"),
+			).toBeVisible();
 		},
 	);
 

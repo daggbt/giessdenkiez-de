@@ -66,6 +66,14 @@ testWithChangedEmail.describe("Edit user - Edit Email", () => {
 			await page.getByLabel("Password").press("Enter");
 			await page.getByRole("button", { name: "OK" }).click();
 
+			// The change has to be confirmed from both addresses
+			// (`double_confirm_changes` in supabase/config.toml).
+			await page.goto(
+				await waitForEmailLink({
+					email: account.email,
+					subject: "Confirm your new email address",
+				}),
+			);
 			await page.goto(
 				await waitForEmailLink({
 					email: changedEmail,
