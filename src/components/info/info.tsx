@@ -2,7 +2,6 @@ import React from "react";
 import { useI18nStore } from "../../i18n/i18n-store";
 import { QaEntry } from "./qa-entry";
 import { SocialShare } from "./social-share";
-import { PrimaryButton } from "../buttons/primary";
 import { Credits } from "./credits";
 import { Markdown } from "../markdown/markdown";
 import { ExternalAnchorLink } from "../anchor-link/external-anchor-link";
@@ -42,44 +41,26 @@ export const Info: React.FC = () => {
 										{i18n.info.about.head.aboutUsAnswer}
 									</Markdown>
 									<Markdown
-										// @ts-expect-error typing too complex
-										components={{ a: ExternalAnchorLink }}
-										className={"[&>p]:pt-2 py-2"}
+										className={"[&>p]:pt-1 pt-4 text-2xl font-semibold"}
 									>
-										{i18n.info.about.head.press}
+										{i18n.info.about.head.acknowledgementTitle}
 									</Markdown>
+									<Markdown className={"[&>p]:pt-1 pt-2"}>
+										{i18n.info.about.head.acknowledgement}
+									</Markdown>
+									<div id="privacy">
+										<Markdown
+											className={"[&>p]:pt-1 pt-4 text-2xl font-semibold"}
+										>
+											{i18n.info.about.head.privacyTitle}
+										</Markdown>
+										<Markdown className={"[&>p]:pt-1 pt-2"}>
+											{i18n.info.about.head.privacy}
+										</Markdown>
+									</div>
 									<div className="w-full 2xl:w-[640px] pt-4 pb-4">
 										<Credits />
 									</div>
-									<Markdown
-										className={"[&>p]:pt-1 pt-4 text-2xl font-semibold"}
-									>
-										{i18n.info.about.head.communityTitle}
-									</Markdown>
-									<Markdown
-										// @ts-expect-error typing too complex
-										components={{ a: ExternalAnchorLink }}
-										className={"[&>p]:pt-1 pt-2 pb-2"}
-									>
-										{i18n.info.about.head.communityAnswer}
-									</Markdown>
-									<PrimaryButton
-										label={i18n.info.about.head.slackButton}
-										onClick={() => {
-											window.open(
-												"https://join.slack.com/t/giessdenkiez/shared_invite/zt-e3et281u-xON4UmBZpKavzDRkw5HmCQ",
-												"_blank",
-											);
-										}}
-										disabled={false}
-									/>
-									<Markdown
-										// @ts-expect-error typing too complex
-										components={{ a: ExternalAnchorLink }}
-										className={"[&>p]:pt-1 pt-2"}
-									>
-										{i18n.info.about.head.feedback}
-									</Markdown>
 								</div>
 							</QaEntry>
 						</div>

@@ -23,7 +23,7 @@ export const city = {
 	inventoryCaptureDate: "2019-05-10",
 
 	// Litres per 30 days a tree should receive (rain + waterings).
-	// Only JUNIOR drives the map colour. Berlin uses 200 L for juniors; Perth summers have
+	// Only JUNIOR drives the map colour. The upstream project uses 200 L for juniors; Perth summers have
 	// roughly double the evaporative demand, hence the placeholder.
 	// TODO(confirm): Q4
 	targetLitresPer30Days: { BABY: 200, JUNIOR: 400, SENIOR: 300, UNKNOWN: 200 },

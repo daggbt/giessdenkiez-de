@@ -1,4 +1,3 @@
-/* eslint-disable complexity */
 import React, { useEffect } from "react";
 import { Filter } from "../filter/filter";
 import { useFilterStore } from "../filter/filter-store";
@@ -15,9 +14,6 @@ import { Splash } from "../splash/splash";
 import { useMapStore } from "../map/map-store";
 import { useSplashStore } from "../splash/splash-store";
 import { Legend } from "../legend/legend";
-
-const isBannerVisible =
-	import.meta.env.VITE_IS_TEMPORARY_BANNER_VISIBLE === "true";
 
 export const Router: React.FC = () => {
 	const url = useUrlState((state) => state.url);
@@ -66,9 +62,7 @@ export const Router: React.FC = () => {
 					</div>
 
 					{!isSplashScreenVisible() && isMapLoaded && (
-						<div
-							className={`flex w-full flex-row justify-center ${isBannerVisible ? "mt-28 sm:mt-20 xl:mt-12" : "mt-3"}`}
-						>
+						<div className={`flex w-full flex-row justify-center mt-3`}>
 							<div
 								className={`${
 									treeId ? "w-[100%] sm:w-[400px]" : "w-[100%] sm:w-[500px]"

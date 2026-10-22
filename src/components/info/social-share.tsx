@@ -14,6 +14,7 @@ import { ExternalAnchorLink } from "../anchor-link/external-anchor-link";
 
 export const SocialShare: React.FC = () => {
 	const i18n = useI18nStore().i18n();
+	const shareUrl = window.location.origin;
 	return (
 		<div className="flex w-full flex-col items-center justify-center text-center">
 			<div className="text-gdk-gray flex w-[60%] flex-col gap-4">
@@ -21,27 +22,27 @@ export const SocialShare: React.FC = () => {
 				<div className="flex flex-row justify-center gap-2">
 					<FacebookShareButton
 						aria-label="facebook-sharing-button"
-						url="https://www.giessdenkiez.de/"
+						url={shareUrl}
 					>
 						<FacebookIcon size={36} round />
 					</FacebookShareButton>
 					<TwitterShareButton
 						aria-label="x-sharing-button"
 						title={i18n.info.share.content}
-						url="https://www.giessdenkiez.de/"
+						url={shareUrl}
 					>
 						<XIcon size={36} round />
 					</TwitterShareButton>
 					<WhatsappShareButton
 						aria-label="whatsapp-sharing-button"
 						title={i18n.info.share.content}
-						url="https://www.giessdenkiez.de/"
+						url={shareUrl}
 					>
 						<WhatsappIcon size={36} round />
 					</WhatsappShareButton>
 					<EmailShareButton
 						aria-label="mail-sharing-button"
-						url="https://www.giessdenkiez.de/"
+						url={shareUrl}
 						body={i18n.info.share.content}
 					>
 						<img

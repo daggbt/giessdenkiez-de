@@ -66,6 +66,7 @@ interface Navbar {
 			usernameLength: string;
 			onlyNumberAndLetters: string;
 			usernameTaken: string;
+			emailTaken: string;
 			backToLogin: string;
 			register: string;
 			confirmEmailTitle: string;
@@ -114,11 +115,10 @@ interface QuestionAnswerHead {
 	answer: string;
 	aboutUsTitle: string;
 	aboutUsAnswer: string;
-	press: string;
-	communityTitle: string;
-	communityAnswer: string;
-	slackButton: string;
-	feedback: string;
+	acknowledgementTitle: string;
+	acknowledgement: string;
+	privacyTitle: string;
+	privacy: string;
 }
 
 interface Info {
@@ -138,8 +138,8 @@ interface Info {
 		openSource: string;
 	};
 	credits: {
-		projectBy: string;
-		fundedBy: string;
+		builtOn: string;
+		data: string;
 	};
 }
 
@@ -274,11 +274,7 @@ interface Splash {
 	waterContent: string;
 	adoptTitle: string;
 	adoptContent: string;
-	networkTitle: string;
-	networkContent: string;
-	questionHeadline: string;
-	questionSubheadline: string;
-	discoverMoreTitle: string;
+	acknowledgement: string;
 	letsGo: string;
 }
 
@@ -288,19 +284,7 @@ interface Loading {
 	profileLoading: string;
 }
 
-interface BannerLink {
-	label: string;
-	href: string;
-}
-
-interface Banner {
-	textBefore: string;
-	programLink: BannerLink;
-	textAfter: string;
-}
-
 export interface Content {
-	banner: Banner;
 	common: Common;
 	map: {
 		attribution: {
@@ -321,14 +305,6 @@ export interface Content {
 				label: string;
 			};
 			improve: {
-				href: string;
-				label: string;
-			};
-			feedback: {
-				href: string;
-				label: string;
-			};
-			imprint: {
 				href: string;
 				label: string;
 			};

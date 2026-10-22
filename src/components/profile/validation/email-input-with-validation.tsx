@@ -1,5 +1,6 @@
 import React from "react";
 import { TextInput } from "../../input/text-input";
+import { useI18nStore } from "../../../i18n/i18n-store";
 import { Warning } from "./warning";
 import { useEmailTakenStore } from "./email-taken-store";
 import { useResetIsEmailTakenOnUnmount } from "./hooks/use-reset-is-email-taken-on-unmount";
@@ -13,6 +14,7 @@ export const EmailInputWithValidation: React.FC<EmailInputValidationProps> = ({
 	label,
 	defaultValue,
 }) => {
+	const i18n = useI18nStore().i18n();
 	const { isEmailTaken, resetErrorMessages } = useEmailTakenStore();
 
 	/**
@@ -37,7 +39,7 @@ export const EmailInputWithValidation: React.FC<EmailInputValidationProps> = ({
 				autoFocus
 			/>
 			{isEmailTaken && (
-				<Warning label="Ein Konto mit dieser E-Mail existiert bereits" />
+				<Warning label={i18n.navbar.profile.settings.emailTaken} />
 			)}
 		</>
 	);

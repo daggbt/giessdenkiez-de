@@ -5,12 +5,12 @@ import { Markdown } from "../markdown/markdown";
 
 export interface LoadingProps {
 	loadingText: string;
-	isImprintPrivacyVisible?: boolean;
+	isPrivacyVisible?: boolean;
 }
 
 export const Loading: React.FC<LoadingProps> = ({
 	loadingText,
-	isImprintPrivacyVisible = false,
+	isPrivacyVisible = false,
 }) => {
 	const i18n = useI18nStore().i18n();
 	return (
@@ -19,18 +19,8 @@ export const Loading: React.FC<LoadingProps> = ({
 				<SplashTreeIcon />
 			</div>
 			<p className="w-[270px] text-center	">{loadingText}</p>
-			{isImprintPrivacyVisible && (
+			{isPrivacyVisible && (
 				<div className="flex flex-row gap-3 text-slate-300">
-					<a
-						href={i18n.map.attribution.imprint.href}
-						key={i18n.map.attribution.imprint.label}
-						target="_blank"
-						className="underline hover:text-gdk-lighter-gray"
-						rel="noopener noreferrer"
-					>
-						<Markdown>{i18n.map.attribution.imprint.label}</Markdown>
-					</a>
-					—
 					<a
 						href={i18n.map.attribution.privacy.href}
 						key={i18n.map.attribution.privacy.label}

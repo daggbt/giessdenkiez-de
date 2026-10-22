@@ -11,8 +11,6 @@ export const MapAttribution: React.FC = () => {
 		i18n.map.attribution.treeData,
 		i18n.map.attribution.weather,
 		i18n.map.attribution.improve,
-		i18n.map.attribution.feedback,
-		i18n.map.attribution.imprint,
 		i18n.map.attribution.privacy,
 	];
 
