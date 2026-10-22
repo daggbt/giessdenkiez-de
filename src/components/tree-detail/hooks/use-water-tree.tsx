@@ -44,11 +44,13 @@ export function useWaterTree(): WaterTreeState {
 			timestamp: date.toISOString(),
 		});
 
-		if (error) {
-			handleError(i18n.common.defaultErrorMessage);
-			setWateringLoading(false);
-		}
 		setWateringLoading(false);
+
+		if (error) {
+			handleError(i18n.common.defaultErrorMessage, error);
+			return;
+		}
+
 		await refreshUserWaterings();
 		await refreshTreeWateringData(treeId, abortController);
 		await useTreesLayerStore.getState().refresh();

@@ -30,7 +30,9 @@ export const WateringCard: React.FC<WateringCardProps> = ({ wateringData }) => {
 	const [isDeleteWateringLoading, setIsDeleteWateringLoading] = useState(false);
 
 	const [isConfirmDeleteVisible, setIsConfirmDeleteVisible] = useState(false);
-	const isWateringByUser = wateringData.username === username;
+	// A null username is a deleted account, not the current (logged out) user.
+	const isWateringByUser =
+		wateringData.username !== null && wateringData.username === username;
 
 	const onClickDelete = async () => {
 		setIsDeleteWateringLoading(true);

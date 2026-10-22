@@ -4,7 +4,7 @@ import {
 	getSeasonMonths,
 	isInWateringSeason,
 } from "../../src/domain/season";
-import { toCityDateString } from "../../src/domain/time";
+import { cityDateToInstant, toCityDateString } from "../../src/domain/time";
 
 // 12:00 Perth time (UTC+8, no DST) on the given date
 const perthNoon = (date: string) => new Date(`${date}T12:00:00+08:00`);
@@ -66,5 +66,22 @@ describe("getSeasonMonths / formatMonthRange", () => {
 	test("formats month names in en-AU", () => {
 		expect(formatMonthRange({ start: 5, end: 10 })).toBe("May–October");
 		expect(formatMonthRange({ start: 11, end: 4 })).toBe("November–April");
+	});
+});
+
+describe("cityDateToInstant", () => {
+	test("is midday in the city time zone", () => {
+		expect(cityDateToInstant("2026-10-22").toISOString()).toBe(
+			"2026-10-22T04:00:00.000Z",
+		);
+		expect(toCityDateString(cityDateToInstant("2027-01-01"))).toBe(
+			"2027-01-01",
+		);
+	});
+
+	test("respects other zones", () => {
+		expect(
+			cityDateToInstant("2026-01-15", "America/New_York").toISOString(),
+		).toBe("2026-01-15T17:00:00.000Z");
 	});
 });

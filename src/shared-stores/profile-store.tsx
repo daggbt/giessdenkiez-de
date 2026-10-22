@@ -16,8 +16,7 @@ interface UserWaterings {
 	id: string;
 	timestamp: string;
 	tree_id: string;
-	username: string;
-	uuid: string;
+	username: string | null;
 }
 
 interface ProfileStore {

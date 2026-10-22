@@ -106,6 +106,8 @@ export const en: Content = {
 				cancel: "Cancel",
 				save: "Save",
 				confirm: "OK",
+				usernamePublicNotice:
+					"Your username and your waterings (amount and date) are visible to everyone.",
 				approve: "Done",
 				checkInput: "Please check your input",
 				usernameShould: "Your username needs to: ",

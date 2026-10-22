@@ -3,9 +3,10 @@ import { useI18nStore } from "../../../../i18n/i18n-store";
 import { PrimaryButton } from "../../../buttons/primary";
 import { useWaterTree } from "../../hooks/use-water-tree";
 import { useErrorStore } from "../../../../error/error-store";
-import { format } from "date-fns";
 import { TertiaryButton } from "../../../buttons/tertiary";
 import { CloseIcon } from "../../../icons/close-icon";
+import { city } from "../../../../config/city";
+import { cityDateToInstant, toCityDateString } from "../../../../domain/time";
 import { useTreeStore } from "../../stores/tree-store";
 import { AlertDialog } from "../../../alert-dialog/alert-dialog";
 import { CheckIcon } from "../../../icons/check-icon";
@@ -29,7 +30,9 @@ export const WateringDialog: React.FC = () => {
 	const i18n = useI18nStore().i18n();
 	const { waterTree } = useWaterTree();
 	const { handleError } = useErrorStore();
-	const formattedToday = format(new Date(), "yyyy-MM-dd");
+	// Dates are entered in city time. This is deliberately the real date, not the
+	// `?now=` development override: the database rejects waterings from the future.
+	const formattedToday = toCityDateString(new Date());
 	const {
 		setIsLastWateringsExpanded,
 		setIsWateringLoading,
@@ -41,7 +44,12 @@ export const WateringDialog: React.FC = () => {
 			e.preventDefault();
 
 			const amount = Number(e.currentTarget.amount.value);
-			const date = new Date(e.currentTarget.date.value);
+			const enteredDate: string = e.currentTarget.date.value;
+			// Today keeps the exact time, past days are recorded at midday.
+			const date =
+				enteredDate === toCityDateString(new Date())
+					? new Date()
+					: cityDateToInstant(enteredDate);
 
 			try {
 				setIsWateringLoading(true);
@@ -104,6 +112,7 @@ export const WateringDialog: React.FC = () => {
 									required
 									name="amount"
 									min="1"
+									max={city.maxWateringLitres}
 								/>
 							</div>
 							<div className="flex flex-col gap-2">

@@ -90,6 +90,7 @@ interface Navbar {
 			invalidCredentials: string;
 			deleteAccountConfirm: string;
 			confirm: string;
+			usernamePublicNotice: string;
 			save: string;
 		};
 		logOut: string;

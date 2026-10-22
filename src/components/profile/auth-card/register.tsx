@@ -73,7 +73,11 @@ export const Register: React.FC = () => {
 					/>
 				</div>
 
-				<div className="pt-11">
+				<p className="pt-6 text-sm text-slate-500">
+					{i18n.navbar.profile.settings.usernamePublicNotice}
+				</p>
+
+				<div className="pt-8">
 					<PrimaryButton
 						type="submit"
 						label={i18n.navbar.profile.settings.register}

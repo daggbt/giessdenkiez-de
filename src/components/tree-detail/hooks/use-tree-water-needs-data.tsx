@@ -1,5 +1,4 @@
 import { computeWaterNeeds } from "../../../domain/water-needs";
-import { getNow } from "../../../domain/time";
 import {
 	TreeAgeClassification,
 	TreeWateringData,
@@ -32,7 +31,9 @@ export function useTreeWaterNeedsData(
 		ageClass: treeAgeClassification,
 		rain30dMm,
 		waterings: treeWateringData,
-		now: getNow(),
+		// Waterings are matched against the real clock (as is the database), not
+		// the `?now=` development override.
+		now: new Date(),
 	});
 
 	return {

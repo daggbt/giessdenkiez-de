@@ -31,3 +31,39 @@ export function toCityDateString(
 		day: "2-digit",
 	}).format(date);
 }
+
+/**
+ * Midday of the given city-local date (`YYYY-MM-DD`) as an instant. Used for the
+ * timestamp of a watering that was logged for a past day.
+ */
+export function cityDateToInstant(
+	date: string,
+	timeZone: string = city.timeZone,
+): Date {
+	const [year, month, day] = date.split("-").map(Number);
+	const guess = Date.UTC(year, month - 1, day, 12);
+
+	const parts = new Intl.DateTimeFormat("en-US", {
+		timeZone,
+		hourCycle: "h23",
+		year: "numeric",
+		month: "numeric",
+		day: "numeric",
+		hour: "numeric",
+		minute: "numeric",
+		second: "numeric",
+	}).formatToParts(new Date(guess));
+	const part = (type: string) =>
+		Number(parts.find((p) => p.type === type)?.value);
+
+	// What the wall clock shows at `guess` minus `guess` is the zone's offset.
+	const wallClockAsUtc = Date.UTC(
+		part("year"),
+		part("month") - 1,
+		part("day"),
+		part("hour"),
+		part("minute"),
+		part("second"),
+	);
+	return new Date(guess - (wallClockAsUtc - guess));
+}
