@@ -6,7 +6,6 @@ import { MapIcon } from "../icons/map-icon";
 import { WateringIcon } from "../icons/watering-icon";
 import { TreeSplashIcon } from "../icons/tree-splash-icon";
 import { HiThereIcon } from "../icons/hi-there-icon";
-import { LanguageToggle } from "../router/languageToggle";
 import { useI18nStore } from "../../i18n/i18n-store";
 import { Markdown } from "../markdown/markdown";
 import { SplashTreeIcon } from "../icons/splash-tree-icon";
@@ -91,9 +90,6 @@ export const Splash: React.FC = () => {
 									<SplashTreeIcon />
 								</div>
 							</div>
-							<div className="flex self-end lg:hidden pb-2 -translate-y-2">
-								<LanguageToggle />
-							</div>
 						</div>
 						<div className="hidden w-full sm:w-3/5 lg:w-7/12 lg:flex flex-row justify-end mr-8 mb-4 mt-6 lg:my-0 lg:px-4">
 							<Credits />
@@ -107,9 +103,6 @@ export const Splash: React.FC = () => {
 						>
 							<CloseIcon />
 						</button>
-						<div className="hidden lg:flex justify-start -translate-y-1">
-							<LanguageToggle />
-						</div>
 					</div>
 				</div>
 				<div className="flex flex-col lg:flex-row w-full justify-between items-top pb-8">

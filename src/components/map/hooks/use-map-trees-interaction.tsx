@@ -6,7 +6,6 @@ import { useUrlState } from "../../router/store.tsx";
 import { useTreeStore } from "../../tree-detail/stores/tree-store";
 import { useHoveredTree } from "./use-hovered-tree";
 import { useMapConstants } from "./use-map-constants";
-import { usePumpStore } from "./use-pump-store";
 import { useSelectedTree } from "./use-selected-tree";
 import { useTreeCircleStyle } from "./use-tree-circle-style";
 
@@ -36,8 +35,6 @@ export function useMapTreesInteraction(map: mapboxgl.Map | undefined) {
 	} = useFilterStore();
 
 	const { filteredCircleColor } = useTreeCircleStyle();
-
-	const { setHoveredPump, setSelectedPump } = usePumpStore();
 
 	const { clearSearch } = useSearchStore();
 
@@ -154,8 +151,6 @@ export function useMapTreesInteraction(map: mapboxgl.Map | undefined) {
 			}
 			const treeFeature = e.features[0];
 
-			setSelectedPump(undefined);
-			setHoveredPump(undefined);
 			hideFilterView();
 
 			setSelectedTreeId(treeFeature.id as string);

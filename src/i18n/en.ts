@@ -50,7 +50,6 @@ export const en: Content = {
 	},
 	navbar: {
 		map: "Map",
-		stats: "Stats",
 		profile: {
 			sidebarLabel: "Profile",
 			title: "Your profile",
@@ -152,7 +151,7 @@ export const en: Content = {
 				press: `For press inquiries please contact [Pia Gralki](mailto:pia.gralki@ts.berlin?subject=giessdenkiez.de%20Presseanfrage).`,
 				communityTitle: "Community",
 				communityAnswer:
-					"Would you like to find out more about watering trees, report pumps or exchange ideas with other active users? Then join our Slack chat!",
+					"Would you like to find out more about watering trees, exchange ideas with other active users? Then join our Slack chat!",
 				slackButton: "Go to Slack Community",
 				feedback: `Do you have **feedback** on *Gieß den Kiez*?
 
@@ -181,9 +180,7 @@ export const en: Content = {
 
 [Geoportal Berlin / Plant trees](https://fbinter.stadt-berlin.de/fb/berlin/service_intern.jsp?id=s_wfs_baumbestand_an@senstadt&type=WFS)
 
-Precipitation from [German Weather Service](https://www.dwd.de/)
-
-Pumps from [Open Street Map](https://www.openstreetmap.de)`,
+Precipitation from [German Weather Service](https://www.dwd.de/)`,
 				},
 			],
 		},
@@ -204,7 +201,7 @@ Do you want to get active or are you already actively watering? On Gieß den Kie
 
 Connect:
 
-You can use our public [Slack channel](https://join.slack.com/t/giessdenkiez/shared_invite/zt-e3et281u-xON4UmBZpKavzDRkw5HmCQ) to exchange ideas with others, report defective pumps in your neighborhood or connect to jointly water your neighborhood.`,
+You can use our public [Slack channel](https://join.slack.com/t/giessdenkiez/shared_invite/zt-e3et281u-xON4UmBZpKavzDRkw5HmCQ) to exchange ideas with others, connect to jointly water your neighborhood.`,
 				},
 				{
 					question: "What can I do if trees are not registered correctly?",
@@ -226,11 +223,7 @@ Before watering, you should first look at the tree and consider whether it reall
 				},
 				{
 					question: `How do I deal with water scarcity?`,
-					answer: `In times of drought and water scarcity, it is especially important to use water sparingly. If you want to water your tree, first ask yourself which tree has the greatest need. Water less frequently, but with larger amounts of water. This encourages the tree to develop deeper roots and become more resilient to drought. To get an overview of the current soil moisture in Berlin, it is worth checking the [Irrigation recommendation for urban trees](https://www.berlin.de/pflanzenschutzamt/stadtgruen/beratung/bewaesserungsempfehlung-fuer-stadtbaeume/) of Berlin's Plant Protection Office. Try to use water from public street pumps instead of tap water from your home. In the long term, it is worth collecting rainwater and storing it in rain barrels. Neighborhood initiatives like [Wassertanke](https://wassertanke.org) can help you with such community projects.`,
-				},
-				{
-					question: "Who can I contact if pumps are broken or damaged?",
-					answer: `The respective district roads and green spaces authorities are responsible for the infrastructure of the roads, which also includes the public hand pumps. If pumps are broken or damaged, the need for repairs can be reported there. We load the locations of the pumps on the map weekly from the Open Street Map database. If you want to help improve the data, for example by reporting a defective pump, you can do so in our [Slack Channel #pump-report](https://app.slack.com/client/T012K4SDYBY/C019SJQDPL7). The OSM community then has the opportunity to enter your information into the database.`,
+					answer: `In times of drought and water scarcity, it is especially important to use water sparingly. If you want to water your tree, first ask yourself which tree has the greatest need. Water less frequently, but with larger amounts of water. This encourages the tree to develop deeper roots and become more resilient to drought. To get an overview of the current soil moisture in Berlin, it is worth checking the [Irrigation recommendation for urban trees](https://www.berlin.de/pflanzenschutzamt/stadtgruen/beratung/bewaesserungsempfehlung-fuer-stadtbaeume/) of Berlin's Plant Protection Office. In the long term, it is worth collecting rainwater and storing it in rain barrels. Neighborhood initiatives like [Wassertanke](https://wassertanke.org) can help you with such community projects.`,
 				},
 				{
 					question: "How are technical problems handled?",
@@ -471,7 +464,6 @@ The district ${district} has provided us with additional information on the indi
 	},
 	filter: {
 		title: "Filter",
-		publicPumps: "Public pumps",
 		myAdoptedTrees: "My adopted trees",
 		allAdoptedTrees: "Adopted trees",
 		lastWateredTrees: "Previously watered trees",
@@ -483,45 +475,6 @@ The district ${district} has provided us with additional information on the indi
 	},
 	common: {
 		defaultErrorMessage: "Something went wrong! Please try again later.",
-	},
-	contact: {
-		dialogTitle: (contactName: string) =>
-			`**Send an email to *${contactName}***`,
-		dialogDetail: (contactName: string, userMail: string) =>
-			`The email to *${contactName}* automatically contains your email address (*${userMail}*) and your text message:`,
-		dialogPlaceholder: "Briefly describe why you would like to connect...",
-		dialogCancel: "Cancel",
-		dialogSubmit: "Send",
-		dialogAlreadyContactedError: (contactName: string) =>
-			`You already sent a contact request to *${contactName}*.`,
-		dialogAlreadyContactedExplanation:
-			"You have already sent a contact request to this person. Another request is not possible.",
-		genericErrorTitle: "Contact request not possible",
-		genericError: `Oops, something went wrong. Please try again.`,
-		dialogSuccess: (contactName: string) =>
-			`The contact request was sent to *${contactName}*.`,
-		dailyLimitError: "You have reached the daily limit for contact requests.",
-		dailyLimitExplanation:
-			"You have reached the daily limit of 3 contact requests. Please try again tomorrow.",
-		containsUrlHint:
-			" Please note, that the message must not contain any links.",
-		messageTooLongError: "The message must be less than 200 characters long.",
-		messageRestrictionsHint: (maxLength: number, message: string) =>
-			`${Math.max(0, maxLength - message.length)} characters left.`,
-		loginFirst: "Log in for contact request",
-		loginFirstReason:
-			"You can only send contact requests if you are logged in.",
-		loginFirstAction: "Log in",
-		confirm: "Okay!",
-	},
-	pumps: {
-		title: "Public pump",
-		status: "Status",
-		lastCheck: "Last check",
-		update: "Update status in OpenStreetMap",
-		working: "Working",
-		defect: "Broken",
-		unknown: "Unknown",
 	},
 	splash: {
 		headline:
@@ -555,73 +508,5 @@ The district ${district} has provided us with additional information on the indi
 			"We are currently loading 967,365 trees from the Berlin tree population.",
 		treeLoading: "Loading tree information...",
 		profileLoading: "Loading...",
-	},
-	stats: {
-		title: "Berlin Statistics",
-		subtitle: "Gieß den Kiez in numbers",
-		streetTrees: "City trees",
-		publicPumps: "Public pumps",
-		activeUsers: "Active casters",
-		backToFront: "back",
-		wateringsStat: {
-			title: "Waterings",
-			unit: "times",
-			hint: (currentYear) => `were poured in ${currentYear}.`,
-			legend: "Number of waterings",
-			backContent: `The watering activity varies in the twelve Berlin districts depending on the level of volunteer involvement. In some districts, engaged residents have already organized themselves into watering groups ([Join the community](https://giessdenkiez.slack.com/ssb/redirect)).
-
-In addition, the needs of the [district’s street and green space offices (SGA)](https://www.berlin.de/ba-friedrichshain-kreuzberg/politik-und-verwaltung/aemter/strassen-und-gruenflaechenamt/) vary. In order to provide the best possible help, you should contact the responsible SGA before the first watering - now you’re ready to join the big community!`,
-		},
-		wateringBehaviorStat: {
-			title: "Pouring behaviour",
-			unit: "liters",
-			watered: "poured",
-			rain: "rain",
-			hint: () => `have already been poured since 2020.`,
-			legend: "∑ Liters poured per month",
-			backContent: `Over impressive 2 million liters have already been poured by volunteers!
-
-“The more the better” does not always apply in the face of increasing water shortages though. And the Berlin watering community knows this, of course, and is therefore mainly active when the trees are actually thirsty: during the vegetative period (April-October) in particularly hot, dry years.
-
-Data source: [Weather data (DWD)](https://opendata.dwd.de/)`,
-		},
-		wateringAmountStat: {
-			title: "Pouring volume",
-			unit: "liters",
-			hint: (currentYear) =>
-				`are entered on average per watering in ${currentYear}.`,
-			legend: "Ø Liters per year",
-			backContent: `“The more the better” applies here to a limited extent: a lot at once, but not too often. And the active community already knows this too, of course.
-
-A watering should involve more rather than fewer liters at a time so that the root system of the thirsty young trees can develop downwards.
-
-But be careful! Young trees can also be overwatered. More information on [watering recommendations for urban trees](https://www.berlin.de/pflanzenschutzamt/stadtgruen/beratung/bewaesserungsempfehlung-fuer-stadtbaeume/).`,
-		},
-		treeSpeciesStat: {
-			title: "Tree species",
-			unit: "tree species",
-			hint: () => `exist in Berlin.`,
-			other: "Other",
-			legend: "Share of Berlin’s tree population",
-			backContent: `Berlin is diverse - including the trees!
-
-This overview shows the twenty most common species, each summarized according to the overarching tree genus.
-
-The [Gieß den Kiez map](https://www.giessdenkiez.de/map) shows the full splendor, and thus nearly 900,000 city trees, with information on species, age and water requirements. Use the filters and search to find out more about the trees in your neighborhood.
-
-Data source: [Berlin tree cadastre (Geoportal Berlin)](https://daten.berlin.de/datensaetze/baumbestand-berlin-wms )`,
-		},
-		adoptionStat: {
-			title: "Tree adoptions",
-			unit: "trees",
-			hint: () => `are adopted.`,
-			legend: "of the adopted trees are particularly thirsty.",
-			backContent: `Adopting a tree on Gieß den Kiez shows that it is regularly cared for and thus facilitates neighborly coordination. Thousands of trees can already count themselves lucky.
-
-Young trees (under 10 years old) are particularly thirsty. These are usually watered by the Parks Department until at least their fifth year. The **5 - 10 years** old trees are therefore “particularly thirsty”.`,
-		},
-		gdKSalesPitch: `*Gieß den Kiez* also in **your city**?
-
-[Find out more!](https://deinestadt.giessdenkiez.de/)`,
 	},
 };

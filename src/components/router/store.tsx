@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { trackPageView } from "../matomo/utils/matomo";
 
 interface SetPathnameOptions {
 	hasSameSearchParams?: boolean;
@@ -36,7 +35,6 @@ export const useUrlState = create<URLState>()((set, get) => ({
 		set({ url });
 
 		window.history.pushState({}, "", url);
-		trackPageView();
 	},
 
 	setSearchParams: (searchParams: URLSearchParams) => {
@@ -49,7 +47,6 @@ export const useUrlState = create<URLState>()((set, get) => ({
 
 		debounceTimeoutId = setTimeout(() => {
 			window.history.pushState({}, "", url);
-			trackPageView();
 		}, 500);
 	},
 

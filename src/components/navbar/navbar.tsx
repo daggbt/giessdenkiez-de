@@ -4,8 +4,6 @@ import { MapIcon } from "../icons/map-icon";
 import { UserIcon } from "../icons/user-icon";
 import { InfoIcon } from "../icons/info-icon";
 import { useI18nStore } from "../../i18n/i18n-store";
-import { LanguageToggle } from "../router/languageToggle";
-import { BarChartIcon } from "../icons/bar-chart-icon";
 
 export const Navbar: React.FC = () => {
 	const i18n = useI18nStore().i18n();
@@ -15,7 +13,6 @@ export const Navbar: React.FC = () => {
 
 	const navItems = [
 		{ label: i18n.navbar.map, path: "/map", icon: <MapIcon /> },
-		{ label: i18n.navbar.stats, path: "/stats", icon: <BarChartIcon /> },
 		{
 			label: i18n.navbar.profile.sidebarLabel,
 			path: "/profile",
@@ -57,10 +54,6 @@ export const Navbar: React.FC = () => {
 						{item.label}
 					</a>
 				))}
-			</div>
-
-			<div className="hidden lg:flex justify-center pb-10">
-				<LanguageToggle />
 			</div>
 		</nav>
 	);

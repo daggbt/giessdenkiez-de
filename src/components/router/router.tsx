@@ -15,7 +15,6 @@ import { Splash } from "../splash/splash";
 import { useMapStore } from "../map/map-store";
 import { useSplashStore } from "../splash/splash-store";
 import { Legend } from "../legend/legend";
-import { Stats } from "../stats/stats";
 
 const isBannerVisible =
 	import.meta.env.VITE_IS_TEMPORARY_BANNER_VISIBLE === "true";
@@ -28,15 +27,13 @@ export const Router: React.FC = () => {
 
 	const { isMapLoaded } = useMapStore();
 
-	const { isFilterViewVisible, recoverUrlParams, recoverLanguageParams } =
-		useFilterStore();
+	const { isFilterViewVisible, recoverUrlParams } = useFilterStore();
 	const { isSplashScreenVisible } = useSplashStore();
 
 	useEffect(() => {
 		if (url.pathname === "/map") {
 			recoverUrlParams();
 		}
-		recoverLanguageParams();
 	}, [url.pathname]);
 
 	switch (url.pathname) {
@@ -113,13 +110,6 @@ export const Router: React.FC = () => {
 				<div className="flex h-dvh w-screen flex-col-reverse bg-white lg:flex-row">
 					<Navbar />
 					<Info />
-				</div>
-			);
-		case "/stats":
-			return (
-				<div className="flex h-dvh w-screen flex-col-reverse bg-white lg:flex-row">
-					<Navbar />
-					<Stats />
 				</div>
 			);
 		default:
