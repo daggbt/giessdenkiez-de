@@ -34,6 +34,12 @@ export const en: Content = {
 				label: "Privacy",
 			},
 		},
+		unavailable: {
+			unsupported:
+				"This browser cannot show the map: WebGL is turned off or not available. Try another browser, or turn on hardware acceleration. Your profile and the information pages still work.",
+			failed:
+				"The map could not be loaded. Please check your connection and reload the page.",
+		},
 	},
 	locationSearch: {
 		placeholder: "Search for an address",
@@ -448,6 +454,8 @@ The watering season is ${seasonMonths}. Outside the season (${offSeasonMonths}) 
 	},
 	common: {
 		defaultErrorMessage: "Something went wrong! Please try again later.",
+		appFailed: "Something went wrong. Please reload the page.",
+		reload: "Reload",
 	},
 	splash: {
 		headline: `Young trees in the ${city.councilName} need your help through hot, dry summers.`,

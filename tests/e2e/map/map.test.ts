@@ -138,3 +138,50 @@ testWithoutSplashScreen.describe("Map", () => {
 		},
 	);
 });
+
+testWithoutSplashScreen.describe("Map - when it cannot be shown", () => {
+	testWithoutSplashScreen(
+		"should explain a missing WebGL and keep the other pages working",
+		async ({ page }) => {
+			await page.addInitScript(() => {
+				const getContext = HTMLCanvasElement.prototype.getContext;
+				HTMLCanvasElement.prototype.getContext = function (
+					this: HTMLCanvasElement,
+					...args: Parameters<typeof getContext>
+				) {
+					return String(args[0]).startsWith("webgl")
+						? null
+						: getContext.apply(this, args);
+				} as typeof getContext;
+			});
+
+			await page.goto("/map");
+
+			await expect(page.getByRole("alert")).toContainText(
+				"This browser cannot show the map",
+			);
+
+			await page.getByRole("link", { name: "Profile" }).click();
+			await expect(page.getByRole("heading", { name: "Login" })).toBeVisible();
+		},
+	);
+
+	testWithoutSplashScreen(
+		"should say so when Mapbox rejects the token",
+		async ({ page }) => {
+			await page.route("**/api.mapbox.com/styles/v1/**", (route) =>
+				route.fulfill({
+					status: 401,
+					json: { message: "Not Authorized - Invalid Token" },
+				}),
+			);
+
+			await page.goto("/map");
+
+			await expect(page.getByRole("alert")).toContainText(
+				"The map could not be loaded",
+			);
+			await expect(page.getByRole("button", { name: "Reload" })).toBeVisible();
+		},
+	);
+});

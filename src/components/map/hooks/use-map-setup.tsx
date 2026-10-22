@@ -42,7 +42,7 @@ export function useMapSetup(
 		MAP_LOCATION_ZOOM_LEVEL,
 	} = useMapConstants();
 
-	const { map, setMap, setIsMapLoaded } = useMapStore();
+	const { map, setMap, setIsMapLoaded, setMapError } = useMapStore();
 
 	useMapTreesInteraction(map);
 	useMapInteraction(map);
@@ -64,22 +64,45 @@ export function useMapSetup(
 
 		const testMode = import.meta.env.VITE_PW_TEST === "true";
 
-		const initializedMap = new mapboxgl.Map({
-			container: mapContainer.current,
-			style: import.meta.env.VITE_MAPBOX_STYLE_URL,
-			center: [MAP_CENTER_LNG, MAP_CENTER_LAT],
-			zoom: MAP_INITIAL_ZOOM_LEVEL,
-			minZoom: MAP_MIN_ZOOM_LEVEL,
-			maxZoom: MAP_MAX_ZOOM_LEVEL,
-			maxBounds: getMaxBounds(),
-			pitch: isMobile ? 0 : MAP_PITCH_DEGREES,
-			testMode,
-		});
+		let initializedMap: mapboxgl.Map;
+		try {
+			initializedMap = new mapboxgl.Map({
+				container: mapContainer.current,
+				style: import.meta.env.VITE_MAPBOX_STYLE_URL,
+				center: [MAP_CENTER_LNG, MAP_CENTER_LAT],
+				zoom: MAP_INITIAL_ZOOM_LEVEL,
+				minZoom: MAP_MIN_ZOOM_LEVEL,
+				maxZoom: MAP_MAX_ZOOM_LEVEL,
+				maxBounds: getMaxBounds(),
+				pitch: isMobile ? 0 : MAP_PITCH_DEGREES,
+				testMode,
+			});
+		} catch (error) {
+			// Usually "Failed to initialize WebGL." (old devices, hardware
+			// acceleration turned off).
+			console.error("Mapbox could not start", error);
+			setMapError(/webgl/i.test(String(error)) ? "unsupported" : "failed");
+			return;
+		}
 
 		initializedMap.dragRotate.disable();
 		initializedMap.touchZoomRotate.disableRotation();
 
+		let hasLoaded = false;
+		initializedMap.on("error", (event) => {
+			// Registering a handler stops mapbox-gl from logging errors itself.
+			console.error("Mapbox error", event.error);
+			// Before the first load, an error that is not about a single source's
+			// tiles (a rejected token, an unreachable style) means no map will appear.
+			if (!hasLoaded && !("sourceId" in event)) {
+				setMapError("failed");
+			}
+		});
+
 		initializedMap.on("load", async () => {
+			hasLoaded = true;
+			setMapError(undefined);
+
 			try {
 				await useTreesLayerStore.getState().load();
 			} catch (error) {

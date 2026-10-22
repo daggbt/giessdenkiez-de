@@ -262,6 +262,8 @@ interface Filter {
 
 interface Common {
 	defaultErrorMessage: string;
+	appFailed: string;
+	reload: string;
 }
 
 interface Splash {
@@ -314,6 +316,10 @@ export interface Content {
 				href: string;
 				label: string;
 			};
+		};
+		unavailable: {
+			unsupported: string;
+			failed: string;
 		};
 	};
 	locationSearch: LocationSearch;
