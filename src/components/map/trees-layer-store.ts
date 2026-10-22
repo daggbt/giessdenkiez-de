@@ -25,7 +25,11 @@ interface TreesLayerStore {
 	treeCount: number;
 	/** Number of trees per age bucket 0 to 10 (for the age filter). */
 	ageHistogram: number[];
-	/** Loads trees, activity and weather once; later calls reuse the result. */
+	/**
+	 * Loads trees, activity and weather once; later calls reuse the result. The
+	 * trees do not wait long for the weather: when it comes late they are
+	 * re-coloured.
+	 */
 	load: () => Promise<void>;
 	/** Re-fetches the activity, re-enriches and updates the map source. */
 	refresh: () => Promise<void>;
@@ -40,8 +44,17 @@ const emptyData: FeatureCollection<Point, EnrichedTreeProperties> = {
 	features: [],
 };
 
+/**
+ * Rain only turns some thirsty trees green, and it is the slowest and least
+ * reliable source, so the trees are drawn without it after this long.
+ */
+const WEATHER_WAIT_MS = 1000;
+
 let baseFeatures: TreeFeature[] = [];
 let loadPromise: Promise<void> | undefined;
+
+const wait = (ms: number) =>
+	new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 async function fetchBaseFeatures(): Promise<TreeFeature[]> {
 	const response = await fetch(import.meta.env.VITE_TREES_GEOJSON_URL);
@@ -88,48 +101,64 @@ function enrich(activityById: ActivityById) {
 	};
 }
 
-export const useTreesLayerStore = create<TreesLayerStore>()((set, get) => ({
-	status: "idle",
-	data: emptyData,
-	activityById: {},
-	treeCount: 0,
-	ageHistogram: [],
-
-	load: () => {
-		loadPromise ??= (async () => {
-			set({ status: "loading" });
-			try {
-				const [features, activityById] = await Promise.all([
-					fetchBaseFeatures(),
-					fetchActivity(),
-					useWeatherStore.getState().load(),
-				]);
-				baseFeatures = features;
-				set({ ...enrich(activityById ?? {}), status: "ready" });
-			} catch (error) {
-				loadPromise = undefined;
-				set({ status: "error" });
-				throw error;
-			}
-		})();
-		return loadPromise;
-	},
-
-	refresh: async () => {
-		if (get().status !== "ready") {
-			return;
-		}
-		const activityById = await fetchActivity();
-		if (!activityById) {
-			return;
-		}
+export const useTreesLayerStore = create<TreesLayerStore>()((set, get) => {
+	/** Enriches the trees again and hands them to the map, if it shows them yet. */
+	const update = (activityById: ActivityById) => {
 		set(enrich(activityById));
 
 		const source = useMapStore.getState().map?.getSource("trees") as
 			GeoJSONSource | undefined;
 		source?.setData(get().data);
-	},
-}));
+	};
+
+	return {
+		status: "idle",
+		data: emptyData,
+		activityById: {},
+		treeCount: 0,
+		ageHistogram: [],
+
+		load: () => {
+			loadPromise ??= (async () => {
+				set({ status: "loading" });
+				const weather = useWeatherStore.getState().load();
+				try {
+					const [features, activityById] = await Promise.all([
+						fetchBaseFeatures(),
+						fetchActivity(),
+						Promise.race([weather, wait(WEATHER_WAIT_MS)]),
+					]);
+					baseFeatures = features;
+					set({ ...enrich(activityById ?? {}), status: "ready" });
+				} catch (error) {
+					loadPromise = undefined;
+					set({ status: "error" });
+					throw error;
+				}
+
+				if (useWeatherStore.getState().status === "loading") {
+					weather.then(() => {
+						if (useWeatherStore.getState().status === "ready") {
+							update(get().activityById);
+						}
+					});
+				}
+			})();
+			return loadPromise;
+		},
+
+		refresh: async () => {
+			if (get().status !== "ready") {
+				return;
+			}
+			const activityById = await fetchActivity();
+			if (!activityById) {
+				return;
+			}
+			update(activityById);
+		},
+	};
+});
 
 // End-to-end tests read the computed tree state through this handle.
 if (import.meta.env.VITE_PW_TEST === "true" && typeof window !== "undefined") {

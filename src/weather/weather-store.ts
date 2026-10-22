@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { city } from "../config/city";
+import { withTimeout } from "../utils/fetch-with-timeout";
 
 export interface DailyWeather {
 	/** `YYYY-MM-DD` in the city time zone. */
@@ -25,6 +26,8 @@ interface WeatherStore {
 
 const CACHE_KEY = "weather-cache-v1";
 const CACHE_MAX_AGE_MS = 60 * 60 * 1000;
+// After 10 s the rain counts as unavailable, which the tree panel explains.
+const fetchWeather = withTimeout(10_000);
 
 const emptyDaily: DailyWeather = {
 	date: [],
@@ -116,7 +119,7 @@ export const useWeatherStore = create<WeatherStore>()((set, get) => ({
 			try {
 				let response = readCache();
 				if (!response) {
-					const result = await fetch(buildWeatherUrl());
+					const result = await fetchWeather(buildWeatherUrl());
 					if (!result.ok) {
 						throw new Error(`Open-Meteo responded with ${result.status}`);
 					}

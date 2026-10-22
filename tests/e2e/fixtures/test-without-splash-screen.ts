@@ -2,6 +2,7 @@ import { test as baseTest } from "@playwright/test";
 import { splashStoreKey } from "../constants";
 import { applyMapMode, MapMode } from "../map";
 import { watchForPageErrors } from "../page-errors";
+import { stubWeather } from "../weather";
 
 type SplashScreenFixtures = {
 	/**
@@ -39,6 +40,7 @@ export const testWithoutSplashScreen = baseTest.extend<SplashScreenFixtures>({
 		);
 
 		await applyMapMode(page, mapMode);
+		await stubWeather(page);
 		const assertNoPageErrors = watchForPageErrors(page);
 
 		await use(page);

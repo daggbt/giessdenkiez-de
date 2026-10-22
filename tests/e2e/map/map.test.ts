@@ -1,6 +1,12 @@
 import { expect } from "@playwright/test";
 import { testWithoutSplashScreen } from "../fixtures/test-without-splash-screen";
-import { findTree } from "../trees";
+import {
+	findTree,
+	IN_SEASON_DATE,
+	IN_SEASON_NOW,
+	readTreeState,
+} from "../trees";
+import { OPEN_METEO_URL, weatherResponse } from "../weather";
 
 // The style is served locally, so the map "loads" without a Mapbox request.
 testWithoutSplashScreen.use({ mapMode: "stubbed" });
@@ -85,6 +91,39 @@ testWithoutSplashScreen.describe("Map", () => {
 			});
 
 			expect(needs).toEqual(["OFF_SEASON"]);
+		},
+	);
+
+	testWithoutSplashScreen(
+		"should draw the trees without waiting for slow rain data",
+		async ({ page }) => {
+			const tree = findTree("JUNIOR", { now: IN_SEASON_NOW });
+
+			// Open-Meteo hangs; enough rain to satisfy every tree comes later.
+			let answerWeather = () => {};
+			const isWeatherAnswered = new Promise<void>((resolve) => {
+				answerWeather = resolve;
+			});
+			await page.route(OPEN_METEO_URL, async (route) => {
+				await isWeatherAnswered;
+				await route.fulfill({ json: weatherResponse({ rainMm: 500 }) });
+			});
+
+			await page.goto(`/map?now=${IN_SEASON_DATE}`);
+
+			await expect
+				.poll(() => readTreeState(page, tree.id), { timeout: 10_000 })
+				.toMatchObject({ need: "THIRSTY" });
+			await expect(page.getByTestId("map")).not.toHaveAttribute(
+				"data-tree-count",
+				"0",
+			);
+
+			answerWeather();
+
+			await expect
+				.poll(() => readTreeState(page, tree.id))
+				.toMatchObject({ need: "SATISFIED" });
 		},
 	);
 
