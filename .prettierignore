@@ -1,0 +1,4 @@
+public/data/trees.geojson
+supabase/seed.sql
+data/
+dist

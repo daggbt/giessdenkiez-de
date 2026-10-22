@@ -94,7 +94,9 @@ export const Register: React.FC = () => {
 						</div>
 					</>
 				}
-				alertMessage={i18n.navbar.profile.settings.confirmEmail(registeredEmail)}
+				alertMessage={i18n.navbar.profile.settings.confirmEmail(
+					registeredEmail,
+				)}
 				href="/profile"
 				id="register-alert-dialog"
 			/>

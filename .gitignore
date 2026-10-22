@@ -29,3 +29,7 @@ dist-ssr
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Import script output
+/data/
+.DS_Store
