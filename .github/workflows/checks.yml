@@ -1,10 +1,13 @@
-name: Release
-
+name: Checks
+permissions:
+  contents: read
 on:
-  workflow_dispatch: # This allows the workflow to be triggered manually
-
+  push:
+    branches: [main, prototype]
+  pull_request:
+    branches: [main, prototype]
 jobs:
-  release:
+  lint-and-unit-tests:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code ⬇️
@@ -30,7 +33,21 @@ jobs:
         if: steps.cache-npm-deps.outputs.cache-hit != 'true'
         run: npm ci
 
-      - name: Create a release 🚢
-        run: npx semantic-release --ci
+      - name: Check Prettier 🧹
+        run: npm run prettier:ci
+
+      - name: Check Lint 🔎
+        run: npm run lint
+
+      - name: Run Unit Tests 🧪
+        run: npm run test:unit
+
+      - name: Type check 🧱
+        run: npx tsc --noEmit
+
+      - name: Build 🏗️
+        run: npm run build
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          VITE_MAPBOX_API_KEY: dummy
+          VITE_SUPABASE_URL: http://localhost:54321
+          VITE_SUPABASE_ANON_KEY: dummy
