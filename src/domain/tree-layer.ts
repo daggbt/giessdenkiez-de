@@ -1,6 +1,11 @@
 import type { Feature, FeatureCollection, Point } from "geojson";
 import { isInWateringSeason } from "./season";
-import { classifyTreeAge, getTreeAge, PlantedDatePrecision } from "./tree-age";
+import { toCityDateString } from "./time";
+import {
+	classifyAgeYears,
+	getTreeAgeOn,
+	PlantedDatePrecision,
+} from "./tree-age";
 import type { AgeClass } from "./tree-age";
 import { getNeedStatus, NeedStatus } from "./tree-status";
 
@@ -50,14 +55,16 @@ export function enrichFeatures(
 	{ activityById, rain30dMm, now }: EnrichmentContext,
 ): EnrichedTreeFeature[] {
 	const inSeason = isInWateringSeason(now);
+	// Once for all trees: formatting the date is the slow part of an age.
+	const today = toCityDateString(now);
 
 	return features.map((feature) => {
 		const properties = feature.properties;
 		const activity = activityById[properties.id];
 		const watered30dL = activity?.watered_litres_30d ?? 0;
 
-		const { ageYears, isLowerBound } = getTreeAge(properties, now);
-		const ageClass = classifyTreeAge(properties, now);
+		const { ageYears, isLowerBound } = getTreeAgeOn(properties, today);
+		const ageClass = classifyAgeYears(ageYears, isLowerBound);
 
 		let ageBucket = -1;
 		if (ageYears !== null) {

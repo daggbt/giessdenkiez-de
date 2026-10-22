@@ -47,6 +47,17 @@ describe("toCityDateString", () => {
 			"2026-10-31",
 		);
 	});
+
+	test("keeps time zones apart", () => {
+		const instant = new Date("2026-10-31T17:00:00Z");
+		expect(toCityDateString(instant, "America/New_York")).toBe("2026-10-31");
+		expect(toCityDateString(instant)).toBe("2026-11-01");
+		expect(toCityDateString(instant, "America/New_York")).toBe("2026-10-31");
+	});
+
+	test("pads month and day", () => {
+		expect(toCityDateString(perthNoon("2027-01-05"))).toBe("2027-01-05");
+	});
 });
 
 describe("getSeasonMonths / formatMonthRange", () => {

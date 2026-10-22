@@ -1,4 +1,4 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import {
 	buildAgeHistogram,
 	enrichFeatures,
@@ -113,6 +113,20 @@ describe("enrichFeatures", () => {
 	test("does not mutate the input features", () => {
 		enrichFeatures(trees, { activityById: {}, rain30dMm: 0, now: inSeason });
 		expect(trees[0].properties).not.toHaveProperty("need");
+	});
+
+	// Building a formatter per tree once froze the page for seconds.
+	test("does not build a date formatter per tree", () => {
+		const many = Array.from({ length: 100 }, (_, i) =>
+			tree(`tree-${i}`, "2023-07-01", "day"),
+		);
+		const DateTimeFormat = vi.spyOn(Intl, "DateTimeFormat");
+		try {
+			enrichFeatures(many, { activityById: {}, rain30dMm: 0, now: inSeason });
+			expect(DateTimeFormat.mock.calls.length).toBeLessThan(3);
+		} finally {
+			DateTimeFormat.mockRestore();
+		}
 	});
 });
 

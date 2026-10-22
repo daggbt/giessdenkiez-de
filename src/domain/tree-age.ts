@@ -22,6 +22,14 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const dateStringToUtcMs = (date: string) => Date.parse(`${date}T00:00:00Z`);
 
 export function getTreeAge(tree: TreePlantingInfo, now: Date): TreeAge {
+	return getTreeAgeOn(tree, toCityDateString(now));
+}
+
+/**
+ * `getTreeAge` for a city-local date (`YYYY-MM-DD`). Classifying many trees is
+ * much faster when the date is worked out once and passed to this.
+ */
+export function getTreeAgeOn(tree: TreePlantingInfo, today: string): TreeAge {
 	const unknown = { ageYears: null, isLowerBound: false };
 
 	const isBefore2019 = tree.planted_date_precision === "before_2019";
@@ -33,7 +41,6 @@ export function getTreeAge(tree: TreePlantingInfo, now: Date): TreeAge {
 		return unknown;
 	}
 
-	const today = toCityDateString(now);
 	if (startDate > today) {
 		return unknown;
 	}

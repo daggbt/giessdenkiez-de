@@ -21,18 +21,54 @@ export function getNow(): Date {
 	return new Date();
 }
 
+/**
+ * Building an `Intl.DateTimeFormat` takes far longer than formatting with one,
+ * and the map works out a date for every tree, so keep one per time zone.
+ */
+function perTimeZone(options: Intl.DateTimeFormatOptions) {
+	const formatters = new Map<string, Intl.DateTimeFormat>();
+	return (timeZone: string) => {
+		let formatter = formatters.get(timeZone);
+		if (!formatter) {
+			formatter = new Intl.DateTimeFormat("en-US", { ...options, timeZone });
+			formatters.set(timeZone, formatter);
+		}
+		return formatter;
+	};
+}
+
+const dateFormatter = perTimeZone({
+	year: "numeric",
+	month: "2-digit",
+	day: "2-digit",
+});
+
+const dateTimeFormatter = perTimeZone({
+	hourCycle: "h23",
+	year: "numeric",
+	month: "numeric",
+	day: "numeric",
+	hour: "numeric",
+	minute: "numeric",
+	second: "numeric",
+});
+
+function formatParts(formatter: Intl.DateTimeFormat, date: Date) {
+	const parts: Partial<Record<Intl.DateTimeFormatPartTypes, string>> = {};
+	for (const { type, value } of formatter.formatToParts(date)) {
+		parts[type] = value;
+	}
+	return parts;
+}
+
 /** `YYYY-MM-DD` of the given instant in the city's time zone. */
 export function toCityDateString(
 	date: Date,
 	timeZone: string = city.timeZone,
 ): string {
-	// The "en-CA" locale formats dates as YYYY-MM-DD.
-	return new Intl.DateTimeFormat("en-CA", {
-		timeZone,
-		year: "numeric",
-		month: "2-digit",
-		day: "2-digit",
-	}).format(date);
+	// Assembled from the parts, so no locale's date pattern is relied on.
+	const { year, month, day } = formatParts(dateFormatter(timeZone), date);
+	return `${year}-${month}-${day}`;
 }
 
 /**
@@ -46,18 +82,8 @@ export function cityDateToInstant(
 	const [year, month, day] = date.split("-").map(Number);
 	const guess = Date.UTC(year, month - 1, day, 12);
 
-	const parts = new Intl.DateTimeFormat("en-US", {
-		timeZone,
-		hourCycle: "h23",
-		year: "numeric",
-		month: "numeric",
-		day: "numeric",
-		hour: "numeric",
-		minute: "numeric",
-		second: "numeric",
-	}).formatToParts(new Date(guess));
-	const part = (type: string) =>
-		Number(parts.find((p) => p.type === type)?.value);
+	const parts = formatParts(dateTimeFormatter(timeZone), new Date(guess));
+	const part = (type: Intl.DateTimeFormatPartTypes) => Number(parts[type]);
 
 	// What the wall clock shows at `guess` minus `guess` is the zone's offset.
 	const wallClockAsUtc = Date.UTC(

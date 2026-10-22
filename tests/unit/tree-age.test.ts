@@ -3,6 +3,7 @@ import {
 	classifyAgeYears,
 	classifyTreeAge,
 	getTreeAge,
+	getTreeAgeOn,
 	TreePlantingInfo,
 } from "../../src/domain/tree-age";
 
@@ -113,5 +114,15 @@ describe("getTreeAge", () => {
 			getTreeAge({ planted_date: null, planted_date_precision: "unknown" }, now)
 				.ageYears,
 		).toBeNull();
+	});
+
+	test("getTreeAgeOn gives the same age for the city-local date", () => {
+		for (const tree of [
+			day("2025-01-15"),
+			day("2030-01-01"),
+			{ planted_date: null, planted_date_precision: "before_2019" } as const,
+		]) {
+			expect(getTreeAgeOn(tree, "2027-01-15")).toEqual(getTreeAge(tree, now));
+		}
 	});
 });
