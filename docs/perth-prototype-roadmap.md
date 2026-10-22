@@ -300,24 +300,24 @@ Outcome: a smaller codebase that still builds. The app will not show trees yet (
 
 Outcome: all Perth rules live in `src/config/city.ts` and `src/domain/`, fully unit-tested; hooks delegate to them; Berlin district logic is gone.
 
-- [ ] **M1.1** Create `src/config/city.ts` exactly as in [Appendix A](#appendix-a--srcconfigcityts-proposed), keeping every `TODO(confirm)` comment.
-- [ ] **M1.2** `src/domain/time.ts`:
+- [x] **M1.1** Create `src/config/city.ts` exactly as in [Appendix A](#appendix-a--srcconfigcityts-proposed), keeping every `TODO(confirm)` comment.
+- [x] **M1.2** `src/domain/time.ts`:
   - `getNow(): Date` — returns `new Date()`, except in dev builds (`import.meta.env.DEV`) where a `?now=YYYY-MM-DD` URL param overrides it (for testing the in-season UI in October).
   - `toCityDateString(date: Date, timeZone = city.timeZone): string` → `YYYY-MM-DD` using `Intl.DateTimeFormat` (no new dependency).
-- [ ] **M1.3** `src/domain/season.ts`: `isInWateringSeason(now: Date, season = city.wateringSeason, timeZone = city.timeZone): boolean`. Months in config are 1-based and the range is inclusive and **may wrap over New Year**. Evaluate using the city-local date.
+- [x] **M1.3** `src/domain/season.ts`: `isInWateringSeason(now: Date, season = city.wateringSeason, timeZone = city.timeZone): boolean`. Months in config are 1-based and the range is inclusive and **may wrap over New Year**. Evaluate using the city-local date.
   - Tests: Nov 1 ✓, Oct 31 ✗, Dec 31 ✓, Jan 1 ✓, Apr 30 ✓, May 1 ✗, Jul 15 ✗; a non-wrapping season (e.g. 3–10) still works; a UTC instant that is already Nov 1 in Perth but Oct 31 in UTC counts as in-season.
-- [ ] **M1.4** `src/domain/tree-age.ts`:
+- [x] **M1.4** `src/domain/tree-age.ts`:
   - Input: `{ planted_date: string | null; planted_date_precision: "day" | "year" | "before_2019" | "unknown" }`, `now`.
   - `getTreeAge()` → `{ ageYears: number | null; isLowerBound: boolean }`. Fractional years = days / 365.25. `before_2019` → age since `city.inventoryCaptureDate`, `isLowerBound: true`. Future planting dates → `null`.
   - `classifyTreeAge()` → `"BABY" | "JUNIOR" | "SENIOR" | "UNKNOWN"`: `ageYears < city.ageBands.councilCareMaxYears` → BABY; `< city.ageBands.needsHelpMaxYears` → JUNIOR; else SENIOR. If `isLowerBound` and the lower bound is below `needsHelpMaxYears` → UNKNOWN (we cannot tell). `null` → UNKNOWN.
   - Tests: planted 6 months ago → BABY; 3 years → JUNIOR; 8 years → SENIOR; `before_2019` today → SENIOR; `unknown` → UNKNOWN; year-precision `2008-01-01` → SENIOR; future date → UNKNOWN; band edges (exactly 2.0 and 5.0 years).
-- [ ] **M1.5** `src/domain/water-needs.ts`: port the arithmetic of `use-tree-water-needs-data.tsx` into `computeWaterNeeds({ ageClass, rain30dMm, waterings, now })` returning the same fields as `TreeWateringDataState` minus colours (`rainSum`, `wateringSum`, `rainPercentage`, `wateringPercentage`, `otherWateringPercentage`, `referenceWaterAmount`, `stillMissingWater`, `shouldBeWatered`).
+- [x] **M1.5** `src/domain/water-needs.ts`: port the arithmetic of `use-tree-water-needs-data.tsx` into `computeWaterNeeds({ ageClass, rain30dMm, waterings, now })` returning the same fields as `TreeWateringDataState` minus colours (`rainSum`, `wateringSum`, `rainPercentage`, `wateringPercentage`, `otherWateringPercentage`, `referenceWaterAmount`, `stillMissingWater`, `shouldBeWatered`).
   - `rainSum = rain30dMm * city.rainCatchmentM2` (1 mm on 1 m² = 1 L, upstream's implicit assumption — document it in a comment).
   - `referenceWaterAmount = city.targetLitresPer30Days[ageClass]`.
   - `wateringSum` = sum of waterings with timestamp within the last 30 days of `now`.
   - Keep upstream percentage logic. `otherWateringPercentage` applies to BABY (City) and SENIOR (established), as upstream.
   - Tests: port the scenarios from the existing `tests/unit/*-tree-water-needs*.test.ts` (non-special-district ones) with Perth targets; add: rain only; rain + watering exceeding target (percentages sum ≤ 1); waterings older than 30 days ignored.
-- [ ] **M1.6** `src/domain/tree-status.ts`:
+- [x] **M1.6** `src/domain/tree-status.ts`:
   ```ts
   export type NeedStatus =
   	| "OFF_SEASON"
@@ -337,9 +337,9 @@ Outcome: all Perth rules live in `src/config/city.ts` and `src/domain/`, fully u
   Rules, in order: not in season → `OFF_SEASON`; BABY → `COUNCIL_CARE`; SENIOR → `ESTABLISHED`; UNKNOWN → `UNKNOWN_AGE`; JUNIOR: `rain + watered ≥ target` → `SATISFIED`; else `watered30dL > 0` → `PARTIAL`; else `THIRSTY`. (Matches upstream semantics: yellow = "someone watered it recently but it is still short".)
   Also export `NEED_STATUS_COLOR_TOKEN: Record<NeedStatus, "gdk-neon-green" | "gdk-tree-yellow" | "gdk-tree-orange">` — `PARTIAL` → yellow, `THIRSTY` → orange, all others → green.
   Tests: one per rule plus precedence (off-season beats everything).
-- [ ] **M1.7** Refactor hooks to thin wrappers: `use-is-in-vegetation-period.tsx` → `use-is-in-watering-season.tsx` (update imports); `use-tree-age-classification.tsx` → `domain/tree-age.ts`; `use-tree-water-needs-data.tsx` → `domain/water-needs.ts` (take `rain30dMm` as a parameter for now; M4 wires the weather store). Delete `use-special-districts.tsx` and every special-district branch (e.g. in `water-needs-hint.tsx`, `ageAndWaterHintSpecialDistrict` in `en.ts`/`content-types.ts`).
-- [ ] **M1.8** Replace `TreeCoreData` in `tree-types.ts` with the Perth shape (mirrors the `trees` table in Appendix D). Fix all compile errors (`tree-detail.tsx`, `tree-adopt-card.tsx`, `tree-age.tsx`, `shared-stores/profile-store.tsx`, `adopted-trees*`). For now species-card lookup can return nothing; M5 fills it.
-- [ ] **M1.9** Delete the Berlin unit tests in `tests/unit/` once their useful scenarios are ported.
+- [x] **M1.7** Refactor hooks to thin wrappers: `use-is-in-vegetation-period.tsx` → `use-is-in-watering-season.tsx` (update imports); `use-tree-age-classification.tsx` → `domain/tree-age.ts`; `use-tree-water-needs-data.tsx` → `domain/water-needs.ts` (take `rain30dMm` as a parameter for now; M4 wires the weather store). Delete `use-special-districts.tsx` and every special-district branch (e.g. in `water-needs-hint.tsx`, `ageAndWaterHintSpecialDistrict` in `en.ts`/`content-types.ts`).
+- [x] **M1.8** Replace `TreeCoreData` in `tree-types.ts` with the Perth shape (mirrors the `trees` table in Appendix D). Fix all compile errors (`tree-detail.tsx`, `tree-adopt-card.tsx`, `tree-age.tsx`, `shared-stores/profile-store.tsx`, `adopted-trees*`). For now species-card lookup can return nothing; M5 fills it.
+- [x] **M1.9** Delete the Berlin unit tests in `tests/unit/` once their useful scenarios are ported.
 
 **Acceptance**
 

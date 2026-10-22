@@ -14,7 +14,7 @@ import { WaterNeedsHint } from "./water-needs-hint";
 import { WaterNeedsTitle } from "./water-needs-title";
 import { WaterTree } from "./water-tree/water-tree";
 import { WaterProgressCircleWinter } from "./water-progress-circle/water-progress-circle-winter";
-import { useIsInVegetationPeriod } from "../../../utils/use-is-in-vegetation-period";
+import { useIsInWateringSeason } from "../../../utils/use-is-in-watering-season";
 
 interface TreeWaterNeedProps {
 	treeData: TreeCoreData;
@@ -29,7 +29,7 @@ export const TreeWaterNeed: React.FC<TreeWaterNeedProps> = ({
 }) => {
 	const i18n = useI18nStore().i18n();
 
-	const isInVegetationPeriod = useIsInVegetationPeriod();
+	const isInWateringSeason = useIsInWateringSeason();
 
 	const [isExpanded, setIsExpanded] = useState(true);
 
@@ -40,7 +40,7 @@ export const TreeWaterNeed: React.FC<TreeWaterNeedProps> = ({
 		stillMissingWater,
 		waterParts,
 		shouldBeWatered,
-	} = useTreeWaterNeedsData(treeData, treeWateringData, treeAgeClassification);
+	} = useTreeWaterNeedsData(treeWateringData, treeAgeClassification, 0); // TODO(M4): rain from weather store;
 
 	return (
 		<div className="flex flex-col gap-4 border-b-2 py-8">
@@ -58,14 +58,14 @@ export const TreeWaterNeed: React.FC<TreeWaterNeedProps> = ({
 			</button>
 			{isExpanded && (
 				<div className="flex flex-col gap-4">
-					<WaterNeedsHint treeData={treeData} />
+					<WaterNeedsHint />
 
 					<WaterNeedsTitle
 						treeAgeClassification={treeAgeClassification}
 						referenceWaterAmount={referenceWaterAmount}
 					/>
 
-					{isInVegetationPeriod && (
+					{isInWateringSeason && (
 						<WaterProgressCircle
 							parts={waterParts}
 							needsWaterAmount={stillMissingWater}
@@ -77,9 +77,9 @@ export const TreeWaterNeed: React.FC<TreeWaterNeedProps> = ({
 						/>
 					)}
 
-					{!isInVegetationPeriod && <WaterProgressCircleWinter />}
+					{!isInWateringSeason && <WaterProgressCircleWinter />}
 
-					{isInVegetationPeriod && (
+					{isInWateringSeason && (
 						<div className="font-bold">
 							{i18n.treeDetail.waterNeed.dataOfLastXDays}
 						</div>

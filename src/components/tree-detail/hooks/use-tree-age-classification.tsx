@@ -1,66 +1,21 @@
-import {
-	TreeAgeClassification,
-	TreeAgeClassificationState,
-	TreeCoreData,
-} from "../tree-types";
-import { specialDistrictsBabyAgeLimit } from "./use-special-districts";
+import { getTreeAge, classifyAgeYears } from "../../../domain/tree-age";
+import { getNow } from "../../../domain/time";
+import { TreeAgeClassificationState, TreeCoreData } from "../tree-types";
 
 export function useTreeAgeClassification(
 	treeData?: TreeCoreData,
-	referenceDate?: Date,
+	referenceDate: Date = getNow(),
 ): TreeAgeClassificationState {
-	const isSpecialDistrict = (district: string) => {
-		return Object.keys(specialDistrictsBabyAgeLimit).includes(district);
+	if (!treeData) {
+		return { treeAgeClassification: "UNKNOWN", treeAge: undefined };
+	}
+
+	const { ageYears, isLowerBound } = getTreeAge(treeData, referenceDate);
+
+	return {
+		treeAgeClassification: classifyAgeYears(ageYears, isLowerBound),
+		// A lower bound ("before 2019") is not a real age.
+		treeAge:
+			ageYears === null || isLowerBound ? undefined : Math.floor(ageYears),
 	};
-
-	const babyAgeLimit = (district: string) => {
-		if (isSpecialDistrict(district)) {
-			return specialDistrictsBabyAgeLimit[
-				district as keyof typeof specialDistrictsBabyAgeLimit
-			];
-		}
-		return 4;
-	};
-
-	const JUNIOR_TREES_AGE_LIMIT = 10;
-
-	const treeAgeClassification = () => {
-		if (!treeData || !treeData.pflanzjahr || treeData.pflanzjahr === 0) {
-			return TreeAgeClassification.UNKNOWN;
-		}
-
-		const age =
-			(referenceDate ?? new Date()).getFullYear() - treeData.pflanzjahr;
-
-		// Only baby and senior trees in special districts
-		if (isSpecialDistrict(treeData.bezirk)) {
-			if (age <= babyAgeLimit(treeData.bezirk)) {
-				return TreeAgeClassification.BABY;
-			}
-			return TreeAgeClassification.SENIOR;
-		}
-
-		// Baby, junior and senior trees in normal districts
-		if (age <= babyAgeLimit(treeData.bezirk)) {
-			return TreeAgeClassification.BABY;
-		}
-
-		if (age <= JUNIOR_TREES_AGE_LIMIT) {
-			return TreeAgeClassification.JUNIOR;
-		}
-		return TreeAgeClassification.SENIOR;
-	};
-
-	const treeAge = () => {
-		if (!treeData) {
-			return undefined;
-		}
-		return treeData.pflanzjahr === 0 ||
-			treeData.pflanzjahr === null ||
-			treeData.pflanzjahr === undefined
-			? undefined
-			: (referenceDate ?? new Date()).getFullYear() - treeData.pflanzjahr;
-	};
-
-	return { treeAgeClassification: treeAgeClassification(), treeAge: treeAge() };
 }

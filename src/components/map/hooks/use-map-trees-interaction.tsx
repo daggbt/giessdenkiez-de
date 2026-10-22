@@ -88,7 +88,7 @@ export function useMapTreesInteraction(map: mapboxgl.Map | undefined) {
 			}
 
 			map?.easeTo({
-				center: treeCoreData.geom.coordinates,
+				center: [treeCoreData.lng, treeCoreData.lat],
 				zoom: MAP_MAX_ZOOM_LEVEL,
 				duration: 1500,
 				essential: true,

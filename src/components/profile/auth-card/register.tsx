@@ -17,12 +17,12 @@ export const Register: React.FC = () => {
 	const { setIsEmailTaken } = useEmailTakenStore();
 	const i18n = useI18nStore().i18n();
 	const { handleError } = useErrorStore();
-	const [emailSubmitted, setEmailSubmitted] = useState("");
+	const [registeredEmail, setRegisteredEmail] = useState("");
 
 	const onSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 		const form = e.currentTarget;
-		setEmailSubmitted(form.email.value);
+		setRegisteredEmail(form.email.value);
 
 		try {
 			await register({
@@ -94,7 +94,7 @@ export const Register: React.FC = () => {
 						</div>
 					</>
 				}
-				alertMessage={i18n.navbar.profile.settings.confirmEmail(emailSubmitted)}
+				alertMessage={i18n.navbar.profile.settings.confirmEmail(registeredEmail)}
 				href="/profile"
 				id="register-alert-dialog"
 			/>

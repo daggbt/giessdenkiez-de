@@ -30,7 +30,11 @@ export const AgeRangeSlider: React.FC = () => {
 			<div className="relative mx-[12.5px]">
 				{!isMobile && (
 					<div className="w-full justify-center flex self-center items-center">
-						<BarGraph min={treeAgeRange.min} max={treeAgeRange.max} />
+						<BarGraph
+							min={treeAgeRange.min}
+							max={treeAgeRange.max}
+							counts={[]} // TODO(M4.7): histogram from the trees layer
+						/>
 					</div>
 				)}
 

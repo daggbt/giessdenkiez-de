@@ -335,18 +335,6 @@ With the official end of the vegetation period, the watering season also comes t
 **Water needs during the vegetation period (March-October)**:
 
 `,
-			ageAndWaterHintSpecialDistrict: (
-				babyAgeLimit: number,
-				district: string,
-			) => `
-Particularly young trees need water in the first few years. Rather less often, but a lot at once.
-
-The district ${district} has provided us with additional information on the individual pouring strategy.
-
-**Below ${babyAgeLimit} years**: We are taken care of by the district green space office.
-
-**Older trees (${babyAgeLimit}+ years)**: We can supply ourselves via the groundwater.`,
-
 			close: "Show less",
 			lastXDaysYLitersWater: (days: number, liters: string) =>
 				`In the last ${days} days, **${liters} liters** were watered.`,

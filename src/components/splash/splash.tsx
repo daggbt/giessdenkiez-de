@@ -11,7 +11,7 @@ import { Markdown } from "../markdown/markdown";
 import { SplashTreeIcon } from "../icons/splash-tree-icon";
 import { ExternalAnchorLink } from "../anchor-link/external-anchor-link";
 import { useSplashStore } from "./splash-store";
-import { useIsInVegetationPeriod } from "../../utils/use-is-in-vegetation-period";
+import { useIsInWateringSeason } from "../../utils/use-is-in-watering-season";
 
 interface SectionHeadingProps {
 	title: string;
@@ -39,7 +39,7 @@ export const Splash: React.FC = () => {
 	const i18n = useI18nStore().i18n();
 	const { hideSplashScreen } = useSplashStore();
 
-	const isInVegetationPeriod = useIsInVegetationPeriod();
+	const isInWateringSeason = useIsInWateringSeason();
 
 	const splashContainer = useRef<HTMLDivElement | null>(null);
 
@@ -111,14 +111,14 @@ export const Splash: React.FC = () => {
 							{i18n.splash.headline}
 						</Markdown>
 						<Markdown className="text-sm xl:text-base">
-							{isInVegetationPeriod
+							{isInWateringSeason
 								? i18n.splash.subheadline
 								: i18n.splash.subheadlineWinter}
 						</Markdown>
 						<div>
 							<PrimaryButton
 								label={
-									isInVegetationPeriod
+									isInWateringSeason
 										? i18n.splash.actionTitle
 										: i18n.splash.actionTitleWinter
 								}
