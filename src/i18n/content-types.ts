@@ -310,6 +310,14 @@ export interface Content {
 				href: string;
 				label: string;
 			};
+			treeData: {
+				href: string;
+				label: string;
+			};
+			weather: {
+				href: string;
+				label: string;
+			};
 			improve: {
 				href: string;
 				label: string;

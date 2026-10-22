@@ -1,3 +1,4 @@
+import { city } from "../config/city";
 import { Content } from "./content-types";
 
 export const en: Content = {
@@ -19,6 +20,14 @@ export const en: Content = {
 			openStreetMap: {
 				href: "https://www.openstreetmap.org/copyright",
 				label: "© OpenStreetMap",
+			},
+			treeData: {
+				href: city.dataAttribution.url,
+				label: city.dataAttribution.text,
+			},
+			weather: {
+				href: "https://open-meteo.com/",
+				label: "Weather data by Open-Meteo.com",
 			},
 			improve: {
 				href: "https://www.mapbox.com/map-feedback",
@@ -43,10 +52,10 @@ export const en: Content = {
 	},
 	legend: {
 		title: "Legend",
-		greenTrees: "No water requirement",
-		yellowTrees: "Moderate water requirement",
-		orangeTrees: "Critical water requirement",
-		grayTrees: "Not matching the filter settings",
+		greenTrees: "Fine for now, or watered by the City",
+		yellowTrees: "Watered recently, needs more",
+		orangeTrees: "Thirsty \u2014 needs water",
+		grayTrees: "Filtered out",
 	},
 	navbar: {
 		map: "Map",
@@ -492,8 +501,7 @@ With the official end of the vegetation period, the watering season also comes t
 		letsGo: "Let's go",
 	},
 	loading: {
-		mapLoading:
-			"We are currently loading 967,365 trees from the Berlin tree population.",
+		mapLoading: "We are currently loading the City of Perth's trees.",
 		treeLoading: "Loading tree information...",
 		profileLoading: "Loading...",
 	},

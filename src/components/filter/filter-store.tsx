@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { MAX_AGE_BUCKET } from "../../domain/tree-layer";
 import { replaceUrlSearchParam } from "../../utils/url-utils";
 import { useUrlState } from "../router/store";
 import { useMapConstants } from "../map/hooks/use-map-constants";
@@ -33,9 +34,10 @@ export interface FilterState {
 	recoverUrlParams: () => void;
 }
 
+// Ages in whole years; the maximum means "this age and older".
 const initialTreeAgeRange = {
 	min: 0,
-	max: 200,
+	max: MAX_AGE_BUCKET,
 };
 
 const treeAgeUrlKeyMin = "treeAgeMin";
@@ -65,6 +67,19 @@ const zoomSearch = new URL(window.location.href).searchParams.get(zoomUrlKey);
 const latSearch = new URL(window.location.href).searchParams.get(latUrlKey);
 const lngSearch = new URL(window.location.href).searchParams.get(lngUrlKey);
 
+const clampAge = (value: string | null, fallback: number) => {
+	const parsed = value === null ? NaN : parseInt(value);
+	return Number.isNaN(parsed)
+		? fallback
+		: Math.min(Math.max(parsed, 0), MAX_AGE_BUCKET);
+};
+
+function initialTreeAgeRangeFromUrl(): TreeAgeRange {
+	const min = clampAge(ageRangeMinSearch, initialTreeAgeRange.min);
+	const max = clampAge(ageRangeMaxSearch, initialTreeAgeRange.max);
+	return { min: Math.min(min, max), max };
+}
+
 /**
  * The URL kept in `useUrlState` is updated synchronously, while
  * `window.location` only catches up once the debounced `pushState` fires.
@@ -77,14 +92,7 @@ export const useFilterStore = create<FilterState>()((set, get) => ({
 	initialTreeAgeRangeMin: initialTreeAgeRange.min,
 	initialTreeAgeRangeMax: initialTreeAgeRange.max,
 
-	treeAgeRange: {
-		min: ageRangeMinSearch
-			? parseInt(ageRangeMinSearch)
-			: initialTreeAgeRange.min,
-		max: ageRangeMaxSearch
-			? parseInt(ageRangeMaxSearch)
-			: initialTreeAgeRange.max,
-	},
+	treeAgeRange: initialTreeAgeRangeFromUrl(),
 
 	areOnlyAllAdoptedTreesVisible: areOnlyAllAdoptedTreesVisibleSearch === "true",
 

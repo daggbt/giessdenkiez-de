@@ -4,6 +4,7 @@ import { useErrorStore } from "../../../error/error-store";
 import { useI18nStore } from "../../../i18n/i18n-store";
 import { useProfileStore } from "../../../shared-stores/profile-store";
 import { supabaseClient } from "../../../auth/supabase-client";
+import { useTreesLayerStore } from "../../map/trees-layer-store";
 
 interface TreeAdoptStore {
 	isLoading: boolean;
@@ -49,6 +50,7 @@ export const useTreeAdoptStore = create<TreeAdoptStore>()((set, get) => ({
 
 			set({ isLoading: false });
 			await refreshAdoptedTreesInfo();
+			await useTreesLayerStore.getState().refresh();
 			await get().refreshIsTreeAdoptedByOthers(treeId, abortController);
 		} catch (error) {
 			set({ isLoading: false });
@@ -78,6 +80,7 @@ export const useTreeAdoptStore = create<TreeAdoptStore>()((set, get) => ({
 			}
 			set({ isLoading: false });
 			await refreshAdoptedTreesInfo();
+			await useTreesLayerStore.getState().refresh();
 			await get().refreshIsTreeAdoptedByOthers(treeId, abortController);
 		} catch (error) {
 			set({ isLoading: false });
@@ -93,30 +96,20 @@ export const useTreeAdoptStore = create<TreeAdoptStore>()((set, get) => ({
 		}
 
 		try {
-			const { data, error } = await supabaseClient
-				.rpc("get_watered_and_adopted")
-				.order("tree_id", { ascending: true });
-
-			if (error) {
-				handleError(i18n.common.defaultErrorMessage);
+			// The adoption counts come with the map's activity data.
+			await useTreesLayerStore.getState().load();
+			if (abortController.signal.aborted) {
 				return;
 			}
 
-			const dataRes = (data ?? []) as {
-				tree_id: string;
-				adopted: number;
-			}[];
-
-			const foundTree = dataRes.find(({ tree_id }) => tree_id === treeId);
-
-			set({ amountOfAdoptions: foundTree?.adopted || 0 });
+			const activity = useTreesLayerStore.getState().activityById[treeId];
+			set({ amountOfAdoptions: activity?.adopted_count ?? 0 });
 		} catch (error) {
 			if (abortController.signal.aborted) {
 				return;
 			}
 
 			handleError(i18n.common.defaultErrorMessage, error);
-			return;
 		}
 	},
 }));

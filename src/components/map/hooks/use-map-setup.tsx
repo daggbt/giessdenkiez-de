@@ -5,8 +5,29 @@ import { useTreeCircleStyle } from "./use-tree-circle-style";
 import { useMapConstants } from "./use-map-constants";
 import { useMapTreesInteraction } from "./use-map-trees-interaction";
 import { useMapInteraction } from "./use-map-interaction";
-import { useTreeStore } from "../../tree-detail/stores/tree-store";
-import { AccumulatedTreeWateringData } from "../../tree-detail/tree-types";
+import { useTreesLayerStore } from "../trees-layer-store";
+import { useFilterStore } from "../../filter/filter-store";
+import { useErrorStore } from "../../../error/error-store";
+import { useI18nStore } from "../../../i18n/i18n-store";
+
+const BOUNDS_PADDING = 0.1;
+
+/** The bounding box from the environment, padded by 10 % so edge trees are reachable. */
+function getMaxBounds(): mapboxgl.LngLatBoundsLike | undefined {
+	const box = (import.meta.env.VITE_MAP_BOUNDING_BOX ?? "")
+		.split(",")
+		.map(Number);
+	if (box.length !== 4 || box.some(Number.isNaN)) {
+		return undefined;
+	}
+	const [minLng, minLat, maxLng, maxLat] = box;
+	const lngPadding = (maxLng - minLng) * BOUNDS_PADDING;
+	const latPadding = (maxLat - minLat) * BOUNDS_PADDING;
+	return [
+		[minLng - lngPadding, minLat - latPadding],
+		[maxLng + lngPadding, maxLat + latPadding],
+	];
+}
 
 export function useMapSetup(
 	mapContainer: React.MutableRefObject<HTMLDivElement | null>,
@@ -30,7 +51,7 @@ export function useMapSetup(
 		circleRadius,
 		circleOpacity,
 		circleStrokeColor,
-		circleColor,
+		filteredCircleColor,
 		circleStrokeWidth,
 	} = useTreeCircleStyle();
 
@@ -50,6 +71,7 @@ export function useMapSetup(
 			zoom: MAP_INITIAL_ZOOM_LEVEL,
 			minZoom: MAP_MIN_ZOOM_LEVEL,
 			maxZoom: MAP_MAX_ZOOM_LEVEL,
+			maxBounds: getMaxBounds(),
 			pitch: isMobile ? 0 : MAP_PITCH_DEGREES,
 			testMode,
 		});
@@ -58,23 +80,47 @@ export function useMapSetup(
 		initializedMap.touchZoomRotate.disableRotation();
 
 		initializedMap.on("load", async () => {
+			try {
+				await useTreesLayerStore.getState().load();
+			} catch (error) {
+				// Show the base map anyway, the toast explains what is missing.
+				useErrorStore
+					.getState()
+					.handleError(
+						useI18nStore.getState().i18n().common.defaultErrorMessage,
+						error,
+					);
+				setIsMapLoaded(true);
+				return;
+			}
+
 			initializedMap.addSource("trees", {
-				type: "vector",
-				url: import.meta.env.VITE_MAPBOX_TREES_TILESET_URL,
+				type: "geojson",
+				data: useTreesLayerStore.getState().data,
 				promoteId: "id",
 			});
+
+			// Filters from the URL are active from the start.
+			const {
+				areOnlyAllAdoptedTreesVisible,
+				areLastWateredTreesVisible,
+				treeAgeRange,
+			} = useFilterStore.getState();
 
 			initializedMap.addLayer({
 				id: "trees",
 				type: "circle",
 				source: "trees",
-				"source-layer": import.meta.env.VITE_MAPBOX_TREES_TILESET_LAYER,
 				paint: {
 					"circle-pitch-alignment": "map",
 					"circle-radius": circleRadius,
 					"circle-opacity": circleOpacity,
 					"circle-stroke-color": circleStrokeColor,
-					"circle-color": circleColor,
+					"circle-color": filteredCircleColor({
+						areOnlyAllAdoptedTreesVisible,
+						areLastWateredTreesVisible,
+						treeAgeRange,
+					}),
 					"circle-stroke-width": circleStrokeWidth,
 				},
 			});
@@ -112,39 +158,4 @@ export function useMapSetup(
 
 		setMap(initializedMap);
 	}, [mapContainer]);
-
-	const { todaysWaterings, loadTodaysWaterings } = useTreeStore();
-
-	useEffect(() => {
-		const loadData = async () => {
-			await loadTodaysWaterings();
-		};
-		loadData();
-	}, []);
-
-	useEffect(() => {
-		const updateFeatureStates = (waterings: AccumulatedTreeWateringData) => {
-			for (const treeId in waterings) {
-				const amount = todaysWaterings[treeId];
-				map?.setFeatureState(
-					{
-						id: treeId,
-						source: "trees",
-						sourceLayer: "trees",
-					},
-					{ todays_waterings: amount },
-				);
-			}
-		};
-
-		if (map && Object.keys(todaysWaterings).length > 0) {
-			if (map.isStyleLoaded()) {
-				updateFeatureStates(todaysWaterings);
-			} else {
-				map.once("idle", () => {
-					updateFeatureStates(todaysWaterings);
-				});
-			}
-		}
-	}, [todaysWaterings, map]);
 }

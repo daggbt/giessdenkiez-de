@@ -2,7 +2,7 @@ import { useState } from "react";
 
 export interface GeocodingResult {
 	id: string;
-	place_name_de: string;
+	place_name: string;
 	geometry: {
 		coordinates: [number, number];
 	};
@@ -31,11 +31,17 @@ export function useGeocoding(): GeocodingResultState {
 
 		const fetchData = async () => {
 			try {
+				const params = new URLSearchParams({
+					autocomplete: "true",
+					language: "en",
+					country: "au",
+					proximity: `${import.meta.env.VITE_MAP_CENTER_LNG},${import.meta.env.VITE_MAP_CENTER_LAT}`,
+					bbox: import.meta.env.VITE_MAP_BOUNDING_BOX,
+					access_token: import.meta.env.VITE_MAPBOX_API_KEY,
+				});
 				const geocodingUrl = `${
 					import.meta.env.VITE_MAPBOX_API_ENDPOINT
-				}/geocoding/v5/mapbox.places/${search}.json?autocomplete=true&language=de&country=de&bbox=${
-					import.meta.env.VITE_MAP_BOUNDING_BOX
-				}&access_token=${import.meta.env.VITE_MAPBOX_API_KEY}`;
+				}/geocoding/v5/mapbox.places/${encodeURIComponent(search)}.json?${params.toString()}`;
 				const res = await fetch(geocodingUrl);
 				if (!res.ok) {
 					return;

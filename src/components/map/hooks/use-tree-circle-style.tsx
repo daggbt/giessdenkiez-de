@@ -1,7 +1,8 @@
 import { Expression } from "mapbox-gl";
 import { useMapConstants } from "./use-map-constants.js";
 import resolveConfig from "tailwindcss/resolveConfig";
-import { useIsInWateringSeason } from "../../../utils/use-is-in-watering-season.js";
+import { MAX_AGE_BUCKET } from "../../../domain/tree-layer";
+import { NEED_STATUS_COLOR_TOKEN } from "../../../domain/tree-status";
 
 //@ts-expect-error tailwindConfig has no type definition
 import tailwindConfig from "../../../../tailwind.config.js";
@@ -79,163 +80,69 @@ export function useTreeCircleStyle() {
 		],
 	] as Expression;
 
-	const isInWateringSeason = useIsInWateringSeason();
+	/**
+	 * The colour only depends on the precomputed `need` property (see
+	 * src/domain/tree-status.ts), so season, age bands and targets live in one place.
+	 */
+	const tokenColors = {
+		"gdk-neon-green": TREE_DEFAULT_COLOR,
+		"gdk-tree-yellow": TREE_YELLOW_COLOR,
+		"gdk-tree-orange": TREE_ORANGE_COLOR,
+	};
+	const needColor: Expression = [
+		"match",
+		["get", "need"],
+		...Object.entries(NEED_STATUS_COLOR_TOKEN)
+			.filter(([, token]) => token !== "gdk-neon-green")
+			.flatMap(([status, token]) => [status, tokenColors[token]]),
+		TREE_DEFAULT_COLOR,
+	];
 
 	const filteredCircleColor = ({
-		isSomeFilterActive,
 		areOnlyAllAdoptedTreesVisible,
 		areLastWateredTreesVisible,
 		treeAgeRange,
 	}: {
-		isSomeFilterActive: boolean;
 		areOnlyAllAdoptedTreesVisible: boolean;
 		areLastWateredTreesVisible: boolean;
 		treeAgeRange: TreeAgeRange;
 	}): Expression => {
-		const defaultExpression: Expression = [
-			"case",
+		// Trees matching any of these are greyed out.
+		const hidden: Expression[] = [];
 
-			// Define logic for winter period, trees are always rendered in default color
-			!isInWateringSeason,
-			TREE_DEFAULT_COLOR,
-
-			// TODO(M4.6): replace with a match on the precomputed `need` property
-			[
-				"case",
-
-				// Fall back to default color for trees with undefined age
-				["==", ["get", "age"], ""],
-				TREE_DEFAULT_COLOR,
-
-				// Senior trees
-				[">", ["get", "age"], 10],
-				TREE_DEFAULT_COLOR,
-
-				// Junior trees
-				[">=", ["get", "age"], 5],
-				[
-					// if total waterings exceed 200 liters, color the tree green
-					"case",
-					[
-						">=",
-						[
-							"+",
-							["round", ["get", "total_water_sum_liters"]],
-							["coalesce", ["feature-state", "todays_waterings"], 0],
-						],
-						200,
-					],
-					TREE_DEFAULT_COLOR,
-					// if the tree has been watered at least once in the last 30 days, color it yellow
-					[
-						">",
-						[
-							"+",
-							["round", ["get", "watering_sum"]],
-							["coalesce", ["feature-state", "todays_waterings"], 0],
-						],
-						0,
-					],
-					TREE_YELLOW_COLOR,
-					TREE_ORANGE_COLOR,
-				],
-
-				// Baby trees
-				[">=", ["get", "age"], 0],
-				TREE_DEFAULT_COLOR,
-
-				// Fallback
-				TREE_GRAY_COLOR,
-			],
-		];
-
-		if (!isSomeFilterActive) {
-			return defaultExpression;
+		const isAgeFilterActive =
+			treeAgeRange.min > 0 || treeAgeRange.max < MAX_AGE_BUCKET;
+		if (isAgeFilterActive) {
+			// -1 is a tree of unknown age
+			hidden.push(["==", ["get", "age_bucket"], -1]);
+			if (treeAgeRange.min > 0) {
+				hidden.push(["<", ["get", "age_bucket"], treeAgeRange.min]);
+			}
+			// the oldest bucket means "this age and older"
+			if (treeAgeRange.max < MAX_AGE_BUCKET) {
+				hidden.push([">", ["get", "age_bucket"], treeAgeRange.max]);
+			}
 		}
 
-		const treeAgeRangeMax =
-			treeAgeRange.max === 200 ? Infinity : treeAgeRange.max;
-
-		const isTreeInAgeRangeExpression: Expression = [
-			"case",
-			["==", ["get", "age"], ""],
-			TREE_GRAY_COLOR, // Color for undefined tree age
-			[">", ["get", "age"], treeAgeRangeMax],
-			TREE_GRAY_COLOR, // Color for tree age > treeAgeRange.max
-			["<", ["get", "age"], treeAgeRange.min],
-			TREE_GRAY_COLOR, // Color for tree age < treeAgeRange.min
-			defaultExpression, // Color for tree age in range
-		];
-
-		if (!areOnlyAllAdoptedTreesVisible && !areLastWateredTreesVisible) {
-			return isTreeInAgeRangeExpression;
+		if (areOnlyAllAdoptedTreesVisible) {
+			hidden.push(["!", ["get", "adopted"]]);
 		}
-
-		const isTreeAdoptedAndInAgeRangeExpression: Expression = [
-			"case",
-			["==", ["get", "is_adopted_by_users"], "True"],
-			isTreeInAgeRangeExpression,
-			TREE_GRAY_COLOR,
-		];
-
-		const areOnlyAllAdoptedTreesVisibleExpression: Expression = [
-			"==",
-			areOnlyAllAdoptedTreesVisible,
-			true,
-		];
-
-		/**
-		 * water_sum contains the sum of all waterings in the last 30 days of a tree including the current day
-		 * if the sum is greater than 0, the tree was watered
-		 */
-		const isTreeWateredInLast30DaysExpression: Expression = [
-			">",
-			[
-				"+",
-				["round", ["get", "watering_sum"]],
-				["coalesce", ["feature-state", "todays_waterings"], 0],
-			],
-			0,
-		];
-
-		/**
-		 * if the tree was watered in the last 30 days, today or is in the age range, return the color
-		 */
-		const isLastWateredAndInAgeRangeExpression: Expression = [
-			"case",
-			isTreeWateredInLast30DaysExpression,
-			isTreeInAgeRangeExpression,
-			TREE_GRAY_COLOR,
-		];
 
 		if (areLastWateredTreesVisible) {
-			return isLastWateredAndInAgeRangeExpression;
+			hidden.push(["<=", ["get", "watered_30d_l"], 0]);
 		}
 
-		return [
-			"case",
+		if (hidden.length === 0) {
+			return needColor;
+		}
 
-			/**
-			 * if only adopted trees are visible,
-			 * then use the isTreeAdoptedAndInAgeRangeExpression to check
-			 * if the tree is adopted by the user AND in the selected age range
-			 * and return the color
-			 */
-			areOnlyAllAdoptedTreesVisibleExpression,
-			isTreeAdoptedAndInAgeRangeExpression,
-
-			/**
-			 * default color for trees that don't match the conditions
-			 */
-			TREE_GRAY_COLOR,
-		];
+		return ["case", ["any", ...hidden], TREE_GRAY_COLOR, needColor];
 	};
 
 	return {
 		circleRadius,
 		circleOpacity,
 		circleStrokeColor,
-		circleColor: TREE_DEFAULT_COLOR,
 		circleStrokeWidth,
 		filteredCircleColor,
 	};

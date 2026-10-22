@@ -71,7 +71,7 @@ export const LocationSearch: React.FC = () => {
 			zoom: MAP_LOCATION_ZOOM_LEVEL,
 		});
 		setSelectedGeocodingResult(geocodingResult);
-		setisPickedGeoSearchResult(geocodingResult.place_name_de);
+		setisPickedGeoSearchResult(geocodingResult.place_name);
 		setSelectedGeocodingResultIndex(0);
 		clearGeocodingResults();
 	};
@@ -119,7 +119,7 @@ export const LocationSearch: React.FC = () => {
 						className={`w-full py-4 pl-2 focus:outline-none`}
 						type="text"
 						value={
-							selectedGeocodingResult?.place_name_de || isPickedGeoSearchResult
+							selectedGeocodingResult?.place_name || isPickedGeoSearchResult
 						}
 						onKeyDown={(e) => {
 							if (e.key === "ArrowDown" || e.key === "ArrowUp") {
@@ -160,7 +160,7 @@ export const LocationSearch: React.FC = () => {
 								}`}
 								onClick={() => onGeocodingResultClick(geocodingResult)}
 							>
-								{geocodingResult.place_name_de}
+								{geocodingResult.place_name}
 							</button>
 						))}
 					</div>

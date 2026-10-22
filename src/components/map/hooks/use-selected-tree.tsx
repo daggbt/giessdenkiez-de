@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { useTreeStore } from "../../tree-detail/stores/tree-store";
 import { useUrlState } from "../../router/store";
 import { useShallow } from "zustand/react/shallow";
+import { useMapStore } from "../map-store";
 
 export function useSelectedTree(map: mapboxgl.Map | undefined) {
 	const [addSearchParam, removeSearchParam] = useUrlState(
@@ -13,34 +14,18 @@ export function useSelectedTree(map: mapboxgl.Map | undefined) {
 		useShallow((store) => [store.selectedTreeId, store.setSelectedTreeId]),
 	);
 
+	const isMapLoaded = useMapStore((store) => store.isMapLoaded);
+
 	const selectedTreeIdRef = useRef<string | undefined>(undefined);
 
 	const setSelectState = (id: string, isSelected: boolean) => {
-		if (!map) {
-			return;
-		}
-
-		if (map.isStyleLoaded()) {
-			map.setFeatureState(
-				{
-					id: id,
-					source: "trees",
-					sourceLayer: "trees",
-				},
-				{ select: isSelected },
-			);
-		} else {
-			map.on("styledata", () => {
-				map.setFeatureState(
-					{
-						id: id,
-						source: "trees",
-						sourceLayer: "trees",
-					},
-					{ select: isSelected },
-				);
-			});
-		}
+		map?.setFeatureState(
+			{
+				id: id,
+				source: "trees",
+			},
+			{ select: isSelected },
+		);
 
 		if (isSelected) {
 			addSearchParam("treeId", id);
@@ -50,7 +35,8 @@ export function useSelectedTree(map: mapboxgl.Map | undefined) {
 	};
 
 	useEffect(() => {
-		if (!map) {
+		// Feature state needs the trees source, which exists once the map has loaded.
+		if (!map || !isMapLoaded) {
 			return;
 		}
 
@@ -63,7 +49,7 @@ export function useSelectedTree(map: mapboxgl.Map | undefined) {
 		}
 
 		selectedTreeIdRef.current = selectedTreeId;
-	}, [selectedTreeId]);
+	}, [selectedTreeId, isMapLoaded]);
 
 	return { selectedTreeIdRef, setSelectedTreeId };
 }

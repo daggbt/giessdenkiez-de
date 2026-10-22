@@ -3,11 +3,15 @@ import { useEffect, useState } from "react";
 import { useFilterStore } from "../../filter/filter-store";
 import { useSearchStore } from "../../location-search/search-store";
 import { useUrlState } from "../../router/store.tsx";
+import { useMapStore } from "../map-store";
 import { useTreeStore } from "../../tree-detail/stores/tree-store";
 import { useHoveredTree } from "./use-hovered-tree";
 import { useMapConstants } from "./use-map-constants";
 import { useSelectedTree } from "./use-selected-tree";
 import { useTreeCircleStyle } from "./use-tree-circle-style";
+
+const treeFeatureId = (feature: mapboxgl.GeoJSONFeature) =>
+	String(feature.properties?.id ?? feature.id);
 
 export function useMapTreesInteraction(map: mapboxgl.Map | undefined) {
 	const url = useUrlState.getState().url;
@@ -22,7 +26,6 @@ export function useMapTreesInteraction(map: mapboxgl.Map | undefined) {
 	const { treeCoreData } = useTreeStore();
 
 	const {
-		isSomeFilterActive,
 		treeAgeRange,
 		areOnlyAllAdoptedTreesVisible,
 		areLastWateredTreesVisible,
@@ -41,38 +44,25 @@ export function useMapTreesInteraction(map: mapboxgl.Map | undefined) {
 	const [easeToStartedByUserClick, setEaseToStartedByUserClick] =
 		useState(false);
 
-	useEffect(() => {
-		if (!map) {
-			return;
-		}
-		if (map.isStyleLoaded()) {
-			map.setPaintProperty(
-				"trees",
-				"circle-color",
-				filteredCircleColor({
-					isSomeFilterActive: isSomeFilterActive(),
-					areOnlyAllAdoptedTreesVisible,
-					areLastWateredTreesVisible,
-					treeAgeRange,
-				}),
-			);
-			return;
-		}
+	const isMapLoaded = useMapStore((store) => store.isMapLoaded);
 
-		map.once("idle", () => {
-			map.setPaintProperty(
-				"trees",
-				"circle-color",
-				filteredCircleColor({
-					isSomeFilterActive: isSomeFilterActive(),
-					areOnlyAllAdoptedTreesVisible,
-					areLastWateredTreesVisible,
-					treeAgeRange,
-				}),
-			);
-		});
+	useEffect(() => {
+		// The trees layer only exists once the map has loaded.
+		if (!map || !isMapLoaded) {
+			return;
+		}
+		map.setPaintProperty(
+			"trees",
+			"circle-color",
+			filteredCircleColor({
+				areOnlyAllAdoptedTreesVisible,
+				areLastWateredTreesVisible,
+				treeAgeRange,
+			}),
+		);
 	}, [
 		map,
+		isMapLoaded,
 		areOnlyAllAdoptedTreesVisible,
 		areLastWateredTreesVisible,
 		treeAgeRange,
@@ -138,7 +128,7 @@ export function useMapTreesInteraction(map: mapboxgl.Map | undefined) {
 				setHoveredTreeId(undefined);
 			}
 			const treeFeature = e.features[0];
-			setHoveredTreeId(treeFeature.id as string);
+			setHoveredTreeId(treeFeatureId(treeFeature));
 			map.getCanvas().style.cursor = "pointer";
 		});
 
@@ -153,7 +143,7 @@ export function useMapTreesInteraction(map: mapboxgl.Map | undefined) {
 
 			hideFilterView();
 
-			setSelectedTreeId(treeFeature.id as string);
+			setSelectedTreeId(treeFeatureId(treeFeature));
 
 			setEaseToStartedByUserClick(true);
 			map.easeTo({

@@ -3,6 +3,7 @@ import { ChangeEvent } from "react";
 import { useFilterStore } from "../filter-store";
 import { useI18nStore } from "../../../i18n/i18n-store";
 import { BarGraph } from "./bar-graph";
+import { useTreesLayerStore } from "../../map/trees-layer-store";
 
 export const AgeRangeSlider: React.FC = () => {
 	const {
@@ -12,6 +13,7 @@ export const AgeRangeSlider: React.FC = () => {
 		initialTreeAgeRangeMax,
 	} = useFilterStore();
 	const i18n = useI18nStore().i18n();
+	const ageHistogram = useTreesLayerStore((store) => store.ageHistogram);
 
 	const INITIAL_MIN = initialTreeAgeRangeMin;
 	const INITIAL_MAX = initialTreeAgeRangeMax;
@@ -33,7 +35,7 @@ export const AgeRangeSlider: React.FC = () => {
 						<BarGraph
 							min={treeAgeRange.min}
 							max={treeAgeRange.max}
-							counts={[]} // TODO(M4.7): histogram from the trees layer
+							counts={ageHistogram}
 						/>
 					</div>
 				)}
@@ -45,7 +47,7 @@ export const AgeRangeSlider: React.FC = () => {
 					value={treeAgeRange.min}
 					step={1}
 					onChange={(event: ChangeEvent<HTMLInputElement>) => {
-						const value = Math.min(+event.target.value, treeAgeRange.max - 10);
+						const value = Math.min(+event.target.value, treeAgeRange.max);
 						event.target.value = value.toString();
 						setTreeAgeRange(value, treeAgeRange.max);
 					}}
@@ -61,7 +63,7 @@ export const AgeRangeSlider: React.FC = () => {
 					value={treeAgeRange.max}
 					step={1}
 					onChange={(event: ChangeEvent<HTMLInputElement>) => {
-						const value = Math.max(+event.target.value, treeAgeRange.min + 10);
+						const value = Math.max(+event.target.value, treeAgeRange.min);
 						event.target.value = value.toString();
 						setTreeAgeRange(treeAgeRange.min, value);
 					}}

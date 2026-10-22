@@ -2,15 +2,19 @@ import { useEffect, useRef } from "react";
 import * as mapboxgl from "mapbox-gl";
 import { useTreeStore } from "../../tree-detail/stores/tree-store";
 import { useShallow } from "zustand/react/shallow";
+import { useMapStore } from "../map-store";
 
 export function useHoveredTree(map: mapboxgl.Map | undefined) {
 	const [hoveredTreeId, setHoveredTreeId] = useTreeStore(
 		useShallow((store) => [store.hoveredTreeId, store.setHoveredTreeId]),
 	);
 
+	const isMapLoaded = useMapStore((store) => store.isMapLoaded);
+
 	const hoveredTreeIdRef = useRef<string | undefined>(undefined);
 	useEffect(() => {
-		if (!map) {
+		// Feature state needs the trees source, which exists once the map has loaded.
+		if (!map || !isMapLoaded) {
 			return;
 		}
 
@@ -19,7 +23,6 @@ export function useHoveredTree(map: mapboxgl.Map | undefined) {
 				{
 					id: hoveredTreeId,
 					source: "trees",
-					sourceLayer: "trees",
 				},
 				{ hover: true },
 			);
@@ -30,14 +33,13 @@ export function useHoveredTree(map: mapboxgl.Map | undefined) {
 				{
 					id: hoveredTreeIdRef.current,
 					source: "trees",
-					sourceLayer: "trees",
 				},
 				{ hover: false },
 			);
 		}
 
 		hoveredTreeIdRef.current = hoveredTreeId;
-	}, [hoveredTreeId]);
+	}, [hoveredTreeId, isMapLoaded]);
 
 	return { hoveredTreeIdRef, setHoveredTreeId };
 }

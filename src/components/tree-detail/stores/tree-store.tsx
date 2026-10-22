@@ -1,9 +1,5 @@
 import { create } from "zustand";
-import {
-	AccumulatedTreeWateringData,
-	TreeCoreData,
-	TreeWateringData,
-} from "../tree-types";
+import { TreeCoreData, TreeWateringData } from "../tree-types";
 import { useTreeAdoptStore } from "./adopt-tree-store";
 import { supabaseClient } from "../../../auth/supabase-client";
 
@@ -36,9 +32,6 @@ interface TreeStore {
 	setIsWateringLoading: (isWateringLoading: boolean) => void;
 	isLastWateringsExpanded: boolean;
 	setIsLastWateringsExpanded: (isExpanded: boolean) => void;
-
-	todaysWaterings: AccumulatedTreeWateringData;
-	loadTodaysWaterings: () => Promise<void>;
 }
 
 export const useTreeStore = create<TreeStore>()((set, get) => ({
@@ -122,32 +115,5 @@ export const useTreeStore = create<TreeStore>()((set, get) => ({
 	isWateringLoading: false,
 	setIsWateringLoading: (isWateringLoading) => {
 		set({ isWateringLoading });
-	},
-	todaysWaterings: {},
-	loadTodaysWaterings: async () => {
-		const todayAtMidnight = new Date();
-		todayAtMidnight.setHours(0, 0, 0, 0);
-
-		const { data: waterings, error: wateringsError } = await supabaseClient
-			.rpc("watered_today")
-			.select("*");
-
-		if (wateringsError) {
-			throw new Error("Failed to fetch today's waterings");
-		}
-
-		const groupedByTreeId = (waterings ?? []).reduce(
-			(
-				acc: AccumulatedTreeWateringData,
-				watering: { tree_id: string; total_amount: number },
-			) => {
-				const { tree_id, total_amount } = watering;
-				acc[tree_id] = total_amount;
-				return acc;
-			},
-			{},
-		);
-
-		set({ todaysWaterings: groupedByTreeId });
 	},
 }));

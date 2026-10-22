@@ -5,6 +5,7 @@ import { useI18nStore } from "../../../i18n/i18n-store";
 import { useTreeStore } from "../stores/tree-store";
 import { useProfileStore } from "../../../shared-stores/profile-store";
 import { supabaseClient } from "../../../auth/supabase-client";
+import { useTreesLayerStore } from "../../map/trees-layer-store";
 
 export interface WaterTreeState {
 	isLoading: boolean;
@@ -29,7 +30,6 @@ export function useWaterTree(): WaterTreeState {
 		}
 
 		const treeId = useTreeStore.getState().selectedTreeId;
-		const username = useProfileStore.getState().username;
 
 		if (!treeId) {
 			return;
@@ -41,7 +41,6 @@ export function useWaterTree(): WaterTreeState {
 			amount: amount,
 			tree_id: treeId,
 			uuid: user?.id,
-			username,
 			timestamp: date.toISOString(),
 		});
 
@@ -52,6 +51,7 @@ export function useWaterTree(): WaterTreeState {
 		setWateringLoading(false);
 		await refreshUserWaterings();
 		await refreshTreeWateringData(treeId, abortController);
+		await useTreesLayerStore.getState().refresh();
 	};
 
 	const deleteWatering = async (wateringId: number) => {
@@ -81,6 +81,7 @@ export function useWaterTree(): WaterTreeState {
 			setWateringLoading(false);
 			await refreshUserWaterings();
 			await refreshTreeWateringData(treeId, abortController);
+			await useTreesLayerStore.getState().refresh();
 		} catch (error) {
 			handleError(i18n.common.defaultErrorMessage, error);
 			setWateringLoading(false);
