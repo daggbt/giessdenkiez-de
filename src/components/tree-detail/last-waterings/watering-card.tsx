@@ -54,9 +54,9 @@ export const WateringCard: React.FC<WateringCardProps> = ({ wateringData }) => {
 				<div className="font-bold">{getDisplayedUsername(wateringData)}</div>
 				<div className="flex flex-row items-center justify-between">
 					<div>{formatDate(new Date(wateringData.timestamp))}</div>
-					<div className="flex flex-row items-center justify-between w-[63px]">
+					<div className="flex flex-row items-center gap-2">
 						<WateringCanIcon className="h-[21px]" />
-						<div>{wateringData.amount}l</div>
+						<div className="whitespace-nowrap">{wateringData.amount} L</div>
 					</div>
 				</div>
 			</div>

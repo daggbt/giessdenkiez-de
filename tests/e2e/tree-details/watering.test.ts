@@ -29,7 +29,7 @@ testWithLoggedInUser.describe("Watering a tree", () => {
 
 			// The watering shows up in the tree's own list ...
 			await expect(page.getByText(account.username)).toBeVisible();
-			await expect(page.getByText("50l")).toBeVisible();
+			await expect(page.getByText("50 L", { exact: true })).toBeVisible();
 
 			// ... the tree is no longer "thirsty" but still short of its target ...
 			await expect
@@ -43,7 +43,7 @@ testWithLoggedInUser.describe("Watering a tree", () => {
 			await page.getByTestId("water-tree-button").click();
 			await page.getByRole("spinbutton").fill("350");
 			await page.getByRole("button", { name: "Save" }).click();
-			await expect(page.getByText("350l")).toBeVisible();
+			await expect(page.getByText("350 L", { exact: true })).toBeVisible();
 			await expect
 				.poll(() => readTreeState(page, tree.id))
 				.toMatchObject({ need: "SATISFIED" });
@@ -54,7 +54,7 @@ testWithLoggedInUser.describe("Watering a tree", () => {
 			// Deleting the large watering takes it back.
 			await page.getByTestId("delete-watering-button").first().click();
 			await page.getByRole("button", { name: "Delete" }).click();
-			await expect(page.getByText("350l")).toBeHidden();
+			await expect(page.getByText("350 L", { exact: true })).toBeHidden();
 			await expect
 				.poll(() => readTreeState(page, tree.id))
 				.toMatchObject({ need: "PARTIAL" });
@@ -100,7 +100,7 @@ testWithLoggedInUser.describe("Watering a tree", () => {
 			await expect(
 				page.getByText("Your watering entry was successful!"),
 			).toBeVisible();
-			await expect(page.getByText("30l")).toBeVisible();
+			await expect(page.getByText("30 L", { exact: true })).toBeVisible();
 			await expect
 				.poll(() => readTreeState(page, tree.id))
 				.toMatchObject({ need: "PARTIAL", watered_30d_l: 30 });

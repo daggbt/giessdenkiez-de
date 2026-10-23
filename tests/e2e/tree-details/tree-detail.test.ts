@@ -54,9 +54,7 @@ testWithoutSplashScreen.describe("Tree detail view", () => {
 			await expect(page.getByTestId("tree-status")).toHaveText(
 				"Thirsty: still needs about 400 litres",
 			);
-			await expect(
-				page.getByText("Needs 400 litres over 30 days"),
-			).toBeVisible();
+			await expect(page.getByText("Target: 400 L every 30 days")).toBeVisible();
 			await expect(page.getByTestId("water-progress-circle")).toBeVisible();
 			await expect(page.getByTestId("water-tree-button")).toBeDisabled(); // logged out
 		},
@@ -73,7 +71,9 @@ testWithoutSplashScreen.describe("Tree detail view", () => {
 			);
 
 			await expect(
-				page.getByText("Outside the watering season (May–October)"),
+				page.getByText(
+					"The watering season runs November–April. Until then, rain usually covers",
+				),
 			).toBeVisible();
 			await expect(
 				page.getByText("Outside the watering season").first(),

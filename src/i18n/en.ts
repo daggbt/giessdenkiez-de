@@ -64,8 +64,8 @@ export const en: Content = {
 			},
 			adoptedTrees: {
 				subtitle: "Adopted trees",
-				irrigationTimes: "Times",
-				irrigationAmount: "Litres",
+				irrigationTimes: (count: number) => (count === 1 ? "time" : "times"),
+				irrigationAmount: "litres",
 				showAll: "Show all",
 				showLess: "Show less",
 				noAdoptedTreesMessage:
@@ -149,7 +149,7 @@ export const en: Content = {
 		about: {
 			head: {
 				question: "About the project",
-				answer: `Young street trees in ${city.councilName} need extra water through hot, dry summers. ${city.appName} shows which trees are thirsty, so volunteers can help the ones that need it most.
+				answer: `Young street trees in the ${city.councilName} need extra water through hot, dry summers. ${city.appName} shows which trees are thirsty, so volunteers can help the ones that need it most.
 
 Pick a tree on the map, see how old it is and how much rain and water it has had in the last 30 days, then log your watering. Trees you adopt appear in your profile.`,
 				aboutUsTitle: "About us",
@@ -206,7 +206,7 @@ Rain from [Open-Meteo](https://open-meteo.com/), and map data from [Mapbox](http
 - **Yellow**: watered recently, but still needs more.
 - **Green**: fine for now, or watered by the ${city.councilName}.
 
-Outside the watering season (${formatMonthRange(getSeasonMonths().season)}) trees do not need extra water.`,
+The watering season runs ${formatMonthRange(getSeasonMonths().season)}. Outside it, the trees do not need extra water.`,
 				},
 				{
 					question: "How much and how should I water?",
@@ -302,11 +302,11 @@ Outside the watering season (${formatMonthRange(getSeasonMonths().season)}) tree
 			`The ${city.councilName} waters new trees for their first ${councilCareMaxYears} years, so this tree does not need your help yet.`,
 		waterNeed: {
 			title: "Water needs",
-			hintOffSeason: (offSeasonMonths: string) =>
-				`Outside the watering season (${offSeasonMonths}), rain usually covers the trees' needs.`,
+			hintOffSeason: (seasonMonths: string) =>
+				`The watering season runs ${seasonMonths}. Until then, rain usually covers the trees' needs.`,
 			hint: "Depending on the age of the tree, the need for water varies.",
 			needXLiters: (liters: string) =>
-				`Needs ${liters} litres over 30 days (rain counts)`,
+				`Target: ${liters} L every 30 days (rain included)`,
 			waterManagedBaby: "Watered by the City",
 			waterManagedSenior: "Established tree",
 			offSeasonTitle: "Outside the watering season",
@@ -471,7 +471,7 @@ The watering season is ${seasonMonths}. Outside the season (${offSeasonMonths}) 
 	},
 	splash: {
 		headline: `Young trees in the ${city.councilName} need your help through hot, dry summers.`,
-		subheadlineWinter: `Outside the watering season (${formatMonthRange(getSeasonMonths().season)}) the trees do not need extra water.
+		subheadlineWinter: `The watering season runs ${formatMonthRange(getSeasonMonths().season)}. Until then, the trees do not need extra water.
 **Come back when the weather warms up!**`,
 		subheadline:
 			"Find out which trees in your neighbourhood are thirsty, adopt the tree on your doorstep and log your waterings.",

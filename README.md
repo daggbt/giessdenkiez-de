@@ -17,6 +17,8 @@ cp .env.sample .env          # then set VITE_MAPBOX_API_KEY; the other values ma
 npm run dev
 ```
 
+When new files arrive in `supabase/migrations`, run `npx supabase migration up`: it applies them and keeps your local accounts and data, while `db reset` starts from scratch.
+
 `npx supabase status` prints the local API URL, keys and the mail UI (confirmation and reset emails land there). Put the local service-role key in `TEST_SUPABASE_SERVICE_ROLE_KEY` for the end-to-end tests. Add `?now=2027-01-15` to the URL in dev to see the app inside the watering season.
 
 Scripts:

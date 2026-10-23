@@ -30,7 +30,7 @@ interface Navbar {
 		};
 		adoptedTrees: {
 			subtitle: string;
-			irrigationTimes: string;
+			irrigationTimes: (count: number) => string;
 			irrigationAmount: string;
 			showAll: string;
 			showLess: string;
@@ -145,7 +145,7 @@ interface Info {
 
 interface WaterNeed {
 	title: string;
-	hintOffSeason: (offSeasonMonths: string) => string;
+	hintOffSeason: (seasonMonths: string) => string;
 	hint: string;
 	needXLiters: (liters: string) => string;
 	waterManagedBaby: string;

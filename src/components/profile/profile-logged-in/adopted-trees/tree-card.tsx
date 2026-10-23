@@ -57,7 +57,9 @@ export const TreeCard: React.FC<TreeCardProps> = ({
 					<div className="mt-1 flex flex-col gap-3">
 						<span>
 							{formatNumber(totalWateringCount)}{" "}
-							{i18n.navbar.profile.adoptedTrees.irrigationTimes}
+							{i18n.navbar.profile.adoptedTrees.irrigationTimes(
+								totalWateringCount,
+							)}
 						</span>
 						<span>
 							{formatNumber(totalWateringVolume)}{" "}

@@ -24,7 +24,7 @@ export const WaterNeedsHint: React.FC = () => {
 					<div className="pr-8">
 						{isInWateringSeason
 							? i18n.treeDetail.waterNeed.hint
-							: i18n.treeDetail.waterNeed.hintOffSeason(offSeasonMonths)}{" "}
+							: i18n.treeDetail.waterNeed.hintOffSeason(seasonMonths)}{" "}
 						{!isInfoboxVisible && (
 							<button
 								className="text-gdk-blue hover:text-gdk-light-blue font-semibold"
