@@ -8,6 +8,8 @@ import { TreeAgeClassification, TreeCoreData } from "./tree-types";
 import { InternalAnchorLink } from "../anchor-link/internal-anchor-link";
 import { InfoIcon } from "../icons/info-icon";
 import { city } from "../../config/city";
+import { useProfileStore } from "../../shared-stores/profile-store";
+import { useTreesLayerStore } from "../map/trees-layer-store";
 
 interface TreeAdoptCardProps {
 	treeData: TreeCoreData;
@@ -21,9 +23,14 @@ export const TreeAdoptCard: React.FC<TreeAdoptCardProps> = ({
 	const [showTooltip, setShowTooltip] = useState(false);
 	const i18n = useI18nStore().i18n();
 
-	const { isAdopted, isLoading, amountOfAdoptions } = useTreeAdoptStore();
-
-	const isTreeAdoptedByUser = isAdopted(treeData.id);
+	const isLoading = useTreeAdoptStore((store) => store.isLoading);
+	const isTreeAdoptedByUser = useProfileStore((store) =>
+		store.adoptedTrees.includes(treeData.id),
+	);
+	// From the map's activity data, keyed by tree, so it is always this tree's.
+	const amountOfAdoptions = useTreesLayerStore(
+		(store) => store.activityById[treeData.id]?.adopted_count ?? 0,
+	);
 
 	const isLoggedIn = useAuthStore().isLoggedIn();
 
@@ -43,7 +50,7 @@ export const TreeAdoptCard: React.FC<TreeAdoptCardProps> = ({
 			return i18n.treeDetail.isAdopted;
 		}
 		return i18n.treeDetail.adoptIt;
-	}, [isLoading, isTreeAdoptedByUser, i18n]);
+	}, [isLoading, isTreeAdoptedByUser, isLoggedIn, i18n]);
 
 	const isTreeAlsoAdoptedByOthers =
 		amountOfAdoptions > 1 && isTreeAdoptedByUser;

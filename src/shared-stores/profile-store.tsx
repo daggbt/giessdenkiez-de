@@ -90,9 +90,9 @@ export const useProfileStore = create<ProfileStore>()((set, get) => ({
 
 	adoptedTrees: [],
 	refreshAdoptedTrees: async () => {
-		set({ adoptedTrees: [] });
-
+		// The old list stays until the new one arrives: hearts must not flicker.
 		if (!useAuthStore.getState().isLoggedIn()) {
+			set({ adoptedTrees: [] });
 			return;
 		}
 

@@ -191,7 +191,6 @@ interface WaterNeed {
 	waterCancel: string;
 	wateringSuccessful: string;
 	wateringFailed: string;
-	savedButNotRefreshed: string;
 }
 
 interface Problem {
@@ -271,6 +270,7 @@ interface Filter {
 
 interface Common {
 	defaultErrorMessage: string;
+	savedButNotRefreshed: string;
 	appFailed: string;
 	reload: string;
 }

@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { TreeCoreData, TreeWateringData } from "../tree-types";
-import { useTreeAdoptStore } from "./adopt-tree-store";
 import { supabaseClient } from "../../../auth/supabase-client";
 
 const TREE_CORE_COLUMNS = [
@@ -52,14 +51,18 @@ interface TreeStore {
 	setIsLastWateringsExpanded: (isExpanded: boolean) => void;
 }
 
+/**
+ * The panel shows the selected tree. A refresh for another tree, e.g. one still
+ * running after a watering when the next tree is opened, must not write into it.
+ */
+const isSelected = (treeId: string | undefined) =>
+	useTreeStore.getState().selectedTreeId === treeId;
+
 export const useTreeStore = create<TreeStore>()((set, get) => ({
 	refreshTreeData: async (treeId, abortController) => {
 		const promises = [
 			get().refreshTreeCoreData(treeId, abortController),
 			get().refreshTreeWateringData(treeId, abortController),
-			useTreeAdoptStore
-				.getState()
-				.refreshIsTreeAdoptedByOthers(treeId, abortController),
 		];
 
 		await Promise.all(promises);
@@ -70,6 +73,10 @@ export const useTreeStore = create<TreeStore>()((set, get) => ({
 		set({ treeCoreData });
 	},
 	refreshTreeCoreData: async (treeId, abortController) => {
+		if (!isSelected(treeId)) {
+			return;
+		}
+
 		get().setTreeCoreData(undefined);
 
 		if (!treeId) {
@@ -86,6 +93,10 @@ export const useTreeStore = create<TreeStore>()((set, get) => ({
 			throw new Error("Failed to fetch tree core data");
 		}
 
+		if (!isSelected(treeId)) {
+			return;
+		}
+
 		const treeCoreData = data[0] as unknown as TreeCoreData | undefined;
 		get().setTreeCoreData(treeCoreData);
 	},
@@ -95,6 +106,10 @@ export const useTreeStore = create<TreeStore>()((set, get) => ({
 		set({ treeWateringData });
 	},
 	refreshTreeWateringData: async (treeId, abortController) => {
+		if (!isSelected(treeId)) {
+			return;
+		}
+
 		get().setTreeWateringData([]);
 
 		if (!treeId) {
@@ -108,6 +123,10 @@ export const useTreeStore = create<TreeStore>()((set, get) => ({
 
 		if (error) {
 			throw new Error("Failed to fetch tree watering data");
+		}
+
+		if (!isSelected(treeId)) {
+			return;
 		}
 
 		const treeWateringData: TreeWateringData[] = data;

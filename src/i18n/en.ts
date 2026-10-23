@@ -359,8 +359,6 @@ The watering season is ${seasonMonths}. Outside the season (${offSeasonMonths}) 
 			wateringSuccessful: "Your watering entry was successful!",
 			wateringFailed:
 				"Your watering could not be saved. Please check your connection and try again.",
-			savedButNotRefreshed:
-				"Your change was saved, but the screen could not be updated. Reload the page to see it.",
 		},
 		lastWaterings: {
 			deletedAccount: "Former user",
@@ -466,6 +464,8 @@ The watering season is ${seasonMonths}. Outside the season (${offSeasonMonths}) 
 	},
 	common: {
 		defaultErrorMessage: "Something went wrong! Please try again later.",
+		savedButNotRefreshed:
+			"Your change was saved, but the screen could not be updated. Reload the page to see it.",
 		appFailed: "Something went wrong. Please reload the page.",
 		reload: "Reload",
 	},

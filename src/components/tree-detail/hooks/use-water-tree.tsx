@@ -31,8 +31,7 @@ async function refreshAfterChange(treeId: string) {
 		useErrorStore
 			.getState()
 			.handleError(
-				useI18nStore.getState().i18n().treeDetail.waterNeed
-					.savedButNotRefreshed,
+				useI18nStore.getState().i18n().common.savedButNotRefreshed,
 				failure.reason,
 			);
 	}
