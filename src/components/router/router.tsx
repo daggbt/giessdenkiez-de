@@ -34,7 +34,12 @@ export const Router: React.FC = () => {
 
 	switch (url.pathname) {
 		case "/":
-			setPathname("/map", { hasSameSearchParams: true, hasSameHash: true });
+			setPathname("/map", {
+				hasSameSearchParams: true,
+				hasSameHash: true,
+				// A redirect: Back must not land here and be redirected again.
+				isReplacing: true,
+			});
 			return <></>;
 
 		case "/map":

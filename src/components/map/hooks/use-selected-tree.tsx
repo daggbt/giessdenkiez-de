@@ -27,10 +27,11 @@ export function useSelectedTree(map: mapboxgl.Map | undefined) {
 			{ select: isSelected },
 		);
 
+		// Opening or closing a tree is a step that Back can undo.
 		if (isSelected) {
-			addSearchParam("treeId", id);
+			addSearchParam("treeId", id, { isNewHistoryEntry: true });
 		} else {
-			removeSearchParam("treeId");
+			removeSearchParam("treeId", { isNewHistoryEntry: true });
 		}
 	};
 

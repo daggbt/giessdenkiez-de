@@ -51,7 +51,7 @@ export const TreeDetail: React.FC = () => {
 
 	const onClose = (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
 		e.preventDefault();
-		removeSearchParam("treeId");
+		removeSearchParam("treeId", { isNewHistoryEntry: true });
 		setTreeCoreData(undefined);
 		setSelectedTreeId(undefined);
 		/**

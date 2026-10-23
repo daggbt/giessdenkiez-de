@@ -52,13 +52,24 @@ export const LocationSearch: React.FC = () => {
 		setIsTextInSearchbar(true);
 	}, [isFilterViewVisible]);
 
-	map?.on("dragstart", function () {
-		clearSearchAndGeocodingResults();
-	});
+	useEffect(() => {
+		if (!map) {
+			return undefined;
+		}
 
-	map?.on("click", function () {
-		clearSearchAndGeocodingResults();
-	});
+		map.on("dragstart", clearSearchAndGeocodingResults);
+		map.on("click", clearSearchAndGeocodingResults);
+
+		return () => {
+			map.off("dragstart", clearSearchAndGeocodingResults);
+			map.off("click", clearSearchAndGeocodingResults);
+		};
+	}, [map]);
+
+	// A new list starts with its first entry selected.
+	useEffect(() => {
+		setSelectedGeocodingResultIndex(0);
+	}, [geocodingResults]);
 
 	const onGeocodingResultClick = (geocodingResult: GeocodingResult) => {
 		map?.easeTo({
@@ -76,30 +87,32 @@ export const LocationSearch: React.FC = () => {
 		clearGeocodingResults();
 	};
 
-	useEffect(() => {
-		const handleKeyPress = (event: KeyboardEvent) => {
-			if (event.key === "ArrowDown") {
-				setSelectedGeocodingResultIndex(
-					Math.min(
-						Math.max(0, geocodingResults.length - 1),
-						selectedGeocodingResultIndex + 1,
-					),
-				);
-			} else if (event.key === "ArrowUp") {
-				setSelectedGeocodingResultIndex(
-					Math.max(0, selectedGeocodingResultIndex - 1),
-				);
-			} else if (event.key === "Enter") {
-				onGeocodingResultClick(geocodingResults[selectedGeocodingResultIndex]);
-			}
-		};
+	// Only keys typed into the search box, and only while there are results:
+	// Enter elsewhere (e.g. in the watering dialog) is none of its business.
+	const onSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+		if (geocodingResults.length === 0) {
+			return;
+		}
 
-		window.addEventListener("keydown", handleKeyPress);
-
-		return () => {
-			window.removeEventListener("keydown", handleKeyPress);
-		};
-	}, [geocodingResults, selectedGeocodingResultIndex]);
+		if (event.key === "ArrowDown") {
+			event.preventDefault();
+			setSelectedGeocodingResultIndex(
+				Math.min(geocodingResults.length - 1, selectedGeocodingResultIndex + 1),
+			);
+		} else if (event.key === "ArrowUp") {
+			event.preventDefault();
+			setSelectedGeocodingResultIndex(
+				Math.max(0, selectedGeocodingResultIndex - 1),
+			);
+		} else if (event.key === "Enter") {
+			event.preventDefault();
+			onGeocodingResultClick(
+				geocodingResults[
+					Math.min(selectedGeocodingResultIndex, geocodingResults.length - 1)
+				],
+			);
+		}
+	};
 
 	return (
 		<div className="flex flex-row w-full justify-center sm:justify-between pointer-events-auto gap-2 ">
@@ -121,11 +134,7 @@ export const LocationSearch: React.FC = () => {
 						value={
 							selectedGeocodingResult?.place_name || isPickedGeoSearchResult
 						}
-						onKeyDown={(e) => {
-							if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-								e.preventDefault();
-							}
-						}}
+						onKeyDown={onSearchKeyDown}
 						onChange={(e) => {
 							setIsCurrentSearch(e.target.value);
 							setisPickedGeoSearchResult(e.target.value);

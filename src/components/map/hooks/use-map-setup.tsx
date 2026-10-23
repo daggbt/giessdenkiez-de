@@ -36,9 +36,6 @@ export function useMapSetup(
 		MAP_PITCH_DEGREES,
 		MAP_MIN_ZOOM_LEVEL,
 		MAP_MAX_ZOOM_LEVEL,
-		MAP_INITIAL_ZOOM_LEVEL,
-		MAP_CENTER_LNG,
-		MAP_CENTER_LAT,
 		MAP_LOCATION_ZOOM_LEVEL,
 	} = useMapConstants();
 
@@ -57,133 +54,175 @@ export function useMapSetup(
 	} = useTreeCircleStyle();
 
 	useEffect(() => {
-		if (!mapContainer.current) {
-			return;
+		const container = mapContainer.current;
+		if (!container) {
+			return undefined;
 		}
 
-		const isMobile = window.innerWidth < 768;
+		let createdMap: mapboxgl.Map | undefined;
+		let isRemoved = false;
 
-		const testMode = import.meta.env.VITE_PW_TEST === "true";
+		// React's StrictMode mounts, unmounts and mounts again in development.
+		// Creating the map a moment later means only the second mount creates one:
+		// one WebGL context and one billable Mapbox map load per page load.
+		const timeoutId = setTimeout(() => {
+			createdMap = createMap(container);
+		}, 0);
 
-		let initializedMap: mapboxgl.Map;
-		try {
-			initializedMap = new mapboxgl.Map({
-				container: mapContainer.current,
-				style: import.meta.env.VITE_MAPBOX_STYLE_URL,
-				center: [MAP_CENTER_LNG, MAP_CENTER_LAT],
-				zoom: MAP_INITIAL_ZOOM_LEVEL,
-				minZoom: MAP_MIN_ZOOM_LEVEL,
-				maxZoom: MAP_MAX_ZOOM_LEVEL,
-				maxBounds: getMaxBounds(),
-				pitch: isMobile ? 0 : MAP_PITCH_DEGREES,
-				testMode,
-			});
-		} catch (error) {
-			// Usually "Failed to initialize WebGL." (old devices, hardware
-			// acceleration turned off).
-			console.error("Mapbox could not start", error);
-			setMapError(/webgl/i.test(String(error)) ? "unsupported" : "failed");
-			return;
-		}
-
-		initializedMap.dragRotate.disable();
-		initializedMap.touchZoomRotate.disableRotation();
-
-		let hasLoaded = false;
-		initializedMap.on("error", (event) => {
-			// Registering a handler stops mapbox-gl from logging errors itself.
-			console.error("Mapbox error", event.error);
-			// Before the first load, an error that is not about a single source's
-			// tiles (a rejected token, an unreachable style) means no map will appear.
-			if (!hasLoaded && !("sourceId" in event)) {
-				setMapError("failed");
+		return () => {
+			clearTimeout(timeoutId);
+			isRemoved = true;
+			if (createdMap) {
+				setMap(undefined);
+				setIsMapLoaded(false);
+				createdMap.remove();
 			}
-		});
+		};
 
-		initializedMap.on("load", async () => {
-			hasLoaded = true;
-			setMapError(undefined);
+		function createMap(element: HTMLDivElement): mapboxgl.Map | undefined {
+			const isMobile = window.innerWidth < 768;
 
+			const testMode = import.meta.env.VITE_PW_TEST === "true";
+
+			// The position from the URL, or the configured default.
+			const { lat, lng, zoom } = useFilterStore.getState();
+
+			let initializedMap: mapboxgl.Map;
 			try {
-				await useTreesLayerStore.getState().load();
+				initializedMap = new mapboxgl.Map({
+					container: element,
+					style: import.meta.env.VITE_MAPBOX_STYLE_URL,
+					center: [lng, lat],
+					zoom,
+					minZoom: MAP_MIN_ZOOM_LEVEL,
+					maxZoom: MAP_MAX_ZOOM_LEVEL,
+					maxBounds: getMaxBounds(),
+					pitch: isMobile ? 0 : MAP_PITCH_DEGREES,
+					testMode,
+				});
 			} catch (error) {
-				// Show the base map anyway, the toast explains what is missing.
-				useErrorStore
-					.getState()
-					.handleError(
-						useI18nStore.getState().i18n().common.defaultErrorMessage,
-						error,
-					);
-				setIsMapLoaded(true);
-				return;
+				// Usually "Failed to initialize WebGL." (old devices, hardware
+				// acceleration turned off).
+				console.error("Mapbox could not start", error);
+				setMapError(/webgl/i.test(String(error)) ? "unsupported" : "failed");
+				return undefined;
 			}
 
-			initializedMap.addSource("trees", {
-				type: "geojson",
-				data: useTreesLayerStore.getState().data,
-				promoteId: "id",
+			initializedMap.dragRotate.disable();
+			initializedMap.touchZoomRotate.disableRotation();
+
+			let hasLoaded = false;
+			initializedMap.on("error", (event) => {
+				// Registering a handler stops mapbox-gl from logging errors itself.
+				console.error("Mapbox error", event.error);
+				// Before the first load, an error that is not about a single source's
+				// tiles (a rejected token, an unreachable style) means no map will appear.
+				if (!hasLoaded && !("sourceId" in event)) {
+					setMapError("failed");
+				}
 			});
 
-			// Filters from the URL are active from the start.
-			const {
-				areOnlyAllAdoptedTreesVisible,
-				areLastWateredTreesVisible,
-				treeAgeRange,
-			} = useFilterStore.getState();
-			const filters = {
-				areOnlyAllAdoptedTreesVisible,
-				areLastWateredTreesVisible,
-				treeAgeRange,
-			};
+			initializedMap.on("load", async () => {
+				hasLoaded = true;
+				setMapError(undefined);
 
-			initializedMap.addLayer({
-				id: "trees",
-				type: "circle",
-				source: "trees",
-				layout: {
-					"circle-sort-key": circleSortKey(filters),
+				let hasTrees = true;
+				try {
+					await useTreesLayerStore.getState().load();
+				} catch (error) {
+					// Show the base map anyway, the toast explains what is missing.
+					useErrorStore
+						.getState()
+						.handleError(
+							useI18nStore.getState().i18n().common.defaultErrorMessage,
+							error,
+						);
+					hasTrees = false;
+				}
+
+				// The map may have been removed while the trees were loading.
+				if (isRemoved) {
+					return;
+				}
+				if (!hasTrees) {
+					setIsMapLoaded(true);
+					return;
+				}
+
+				initializedMap.addSource("trees", {
+					type: "geojson",
+					data: useTreesLayerStore.getState().data,
+					promoteId: "id",
+				});
+
+				// Filters from the URL are active from the start.
+				const {
+					areOnlyAllAdoptedTreesVisible,
+					areLastWateredTreesVisible,
+					treeAgeRange,
+				} = useFilterStore.getState();
+				const filters = {
+					areOnlyAllAdoptedTreesVisible,
+					areLastWateredTreesVisible,
+					treeAgeRange,
+				};
+
+				initializedMap.addLayer({
+					id: "trees",
+					type: "circle",
+					source: "trees",
+					layout: {
+						"circle-sort-key": circleSortKey(filters),
+					},
+					paint: {
+						"circle-pitch-alignment": "map",
+						"circle-radius": circleRadius(filters),
+						"circle-opacity": circleOpacity(filters),
+						"circle-stroke-color": circleStrokeColor,
+						"circle-color": filteredCircleColor(filters),
+						"circle-stroke-width": circleStrokeWidth,
+					},
+				});
+
+				setIsMapLoaded(true);
+			});
+
+			const geoLocateControl = new mapboxgl.GeolocateControl({
+				positionOptions: {
+					enableHighAccuracy: true,
 				},
-				paint: {
-					"circle-pitch-alignment": "map",
-					"circle-radius": circleRadius(filters),
-					"circle-opacity": circleOpacity(filters),
-					"circle-stroke-color": circleStrokeColor,
-					"circle-color": filteredCircleColor(filters),
-					"circle-stroke-width": circleStrokeWidth,
-				},
+				// Draw an arrow next to the location dot to indicate which direction the device is heading.
+				showUserHeading: true,
+				showAccuracyCircle: false,
 			});
+			geoLocateControl.on("geolocate", function (e) {
+				const { coords } = e as {
+					coords: { longitude: number; latitude: number };
+				};
 
-			setIsMapLoaded(true);
-		});
-
-		const geoLocateControl = new mapboxgl.GeolocateControl({
-			positionOptions: {
-				enableHighAccuracy: true,
-			},
-			// Draw an arrow next to the location dot to indicate which direction the device is heading.
-			showUserHeading: true,
-			showAccuracyCircle: false,
-		});
-		geoLocateControl.on("geolocate", function (e) {
-			const { coords } = e as {
-				coords: { longitude: number; latitude: number };
-			};
-
-			initializedMap.easeTo({
-				center: [coords.longitude, coords.latitude],
-				zoom: MAP_LOCATION_ZOOM_LEVEL,
-				pitch: isMobile ? 0 : MAP_PITCH_DEGREES,
+				initializedMap.easeTo({
+					center: [coords.longitude, coords.latitude],
+					zoom: MAP_LOCATION_ZOOM_LEVEL,
+					pitch: isMobile ? 0 : MAP_PITCH_DEGREES,
+				});
 			});
-		});
-		initializedMap.addControl(geoLocateControl, "bottom-left");
-		initializedMap.addControl(
-			new mapboxgl.NavigationControl({
-				showCompass: false,
-				showZoom: !isMobile,
-			}),
-			"bottom-left",
-		);
+			initializedMap.addControl(geoLocateControl, "bottom-left");
+			initializedMap.addControl(
+				new mapboxgl.NavigationControl({
+					showCompass: false,
+					showZoom: !isMobile,
+				}),
+				"bottom-left",
+			);
 
-		setMap(initializedMap);
+			setMap(initializedMap);
+
+			// End-to-end tests check what the map renders through this handle.
+			if (testMode) {
+				(window as unknown as { __map: mapboxgl.Map }).__map = initializedMap;
+			}
+
+			return initializedMap;
+		}
 	}, [mapContainer]);
 }

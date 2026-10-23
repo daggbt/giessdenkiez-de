@@ -8,7 +8,12 @@ import { TreeProperties } from "../../src/domain/tree-layer";
 
 const collection = JSON.parse(
 	readFileSync("public/data/trees.geojson", "utf-8"),
-) as { features: Array<{ properties: TreeProperties }> };
+) as {
+	features: Array<{
+		geometry: { coordinates: [number, number] };
+		properties: TreeProperties;
+	}>;
+};
 
 /** Use with `?now=` to see the app inside the watering season. */
 export const IN_SEASON_DATE = "2027-01-15";
@@ -50,6 +55,17 @@ export function findTree(
 		);
 	}
 	return tree;
+}
+
+/** `[lng, lat]` of a tree in the committed GeoJSON. */
+export function treeCoordinates(treeId: string): [number, number] {
+	const feature = collection.features.find(
+		(candidate) => candidate.properties.id === treeId,
+	);
+	if (!feature) {
+		throw new Error(`Tree ${treeId} not found in public/data/trees.geojson`);
+	}
+	return feature.geometry.coordinates;
 }
 
 interface TreesLayerHandle {

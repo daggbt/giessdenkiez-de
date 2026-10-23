@@ -1,5 +1,6 @@
 import * as mapboxgl from "mapbox-gl";
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useFilterStore } from "../../filter/filter-store";
 import { useSearchStore } from "../../location-search/search-store";
 import { useUrlState } from "../../router/store.tsx";
@@ -13,37 +14,34 @@ import { useTreeCircleStyle } from "./use-tree-circle-style";
 const treeFeatureId = (feature: mapboxgl.GeoJSONFeature) =>
 	String(feature.properties?.id ?? feature.id);
 
+/** The map stays mounted under the other pages, but only acts on the map page. */
+const isOnMapPage = () => useUrlState.getState().url.pathname === "/map";
+
 export function useMapTreesInteraction(map: mapboxgl.Map | undefined) {
-	const url = useUrlState.getState().url;
-
-	const { hideFilterView } = useFilterStore();
-
 	const { MAP_TREE_ZOOM_LEVEL, mapTreeZoomedInOffset } = useMapConstants();
 
 	const { setHoveredTreeId } = useHoveredTree(map);
 	const { setSelectedTreeId } = useSelectedTree(map);
 
-	const { treeCoreData } = useTreeStore();
+	const treeCoreData = useTreeStore((store) => store.treeCoreData);
 
-	const {
+	const [
 		treeAgeRange,
 		areOnlyAllAdoptedTreesVisible,
 		areLastWateredTreesVisible,
-		lat,
-		lng,
-		zoom,
-		setLat,
-		setLng,
-		setZoom,
-	} = useFilterStore();
+	] = useFilterStore(
+		useShallow((store) => [
+			store.treeAgeRange,
+			store.areOnlyAllAdoptedTreesVisible,
+			store.areLastWateredTreesVisible,
+		]),
+	);
 
 	const { filteredCircleColor, circleRadius, circleOpacity, circleSortKey } =
 		useTreeCircleStyle();
 
-	const { clearSearch } = useSearchStore();
-
-	const [easeToStartedByUserClick, setEaseToStartedByUserClick] =
-		useState(false);
+	// A clicked tree is already being flown to when its data arrives.
+	const isEaseToStartedByUserClick = useRef(false);
 
 	const isMapLoaded = useMapStore((store) => store.isMapLoaded);
 
@@ -71,10 +69,10 @@ export function useMapTreesInteraction(map: mapboxgl.Map | undefined) {
 
 	useEffect(() => {
 		if (treeCoreData) {
-			clearSearch();
+			useSearchStore.getState().clearSearch();
 			setSelectedTreeId(treeCoreData.id);
 
-			if (easeToStartedByUserClick) {
+			if (isEaseToStartedByUserClick.current) {
 				return;
 			}
 
@@ -90,63 +88,55 @@ export function useMapTreesInteraction(map: mapboxgl.Map | undefined) {
 		}
 	}, [treeCoreData, map]);
 
+	// Registered once per map and removed again, whichever page the app opens
+	// on: the handlers check the current page themselves.
 	useEffect(() => {
-		if (!map) {
-			return;
+		// The trees layer only exists once the map has loaded.
+		if (!map || !isMapLoaded) {
+			return undefined;
 		}
-		if (map.isStyleLoaded()) {
-			map.setCenter([lng, lat]);
-			map.setZoom(zoom);
-			return;
-		}
-		map.on("load", () => {
-			map.setCenter([lng, lat]);
-			map.setZoom(zoom);
-		});
-	}, [map, lat, lng, zoom]);
 
-	useEffect(() => {
-		if (!map) {
-			return;
-		}
-		if (url.pathname !== "/map") {
-			return;
-		}
-		map.on("zoomend", () => {
+		const { setLat, setLng, setZoom, hideFilterView } =
+			useFilterStore.getState();
+
+		const onZoomEnd = () => {
+			if (!isOnMapPage()) {
+				return;
+			}
 			setZoom(map.getZoom());
 			setLat(map.getCenter().lat);
 			setLng(map.getCenter().lng);
-		});
-		map.on("moveend", () => {
+		};
+
+		const onMoveEnd = () => {
+			if (!isOnMapPage()) {
+				return;
+			}
 			setLat(map.getCenter().lat);
 			setLng(map.getCenter().lng);
-		});
-		map.on("mousemove", "trees", (e) => {
-			if (!map || !e.features) {
-				return;
-			}
-			if (e.features?.length === 0) {
-				setHoveredTreeId(undefined);
-			}
-			const treeFeature = e.features[0];
-			setHoveredTreeId(treeFeatureId(treeFeature));
-			map.getCanvas().style.cursor = "pointer";
-		});
+		};
 
-		map.on("click", "trees", (e) => {
-			if (!map || !e.features) {
+		const onMouseMove = (e: mapboxgl.MapMouseEvent) => {
+			const treeFeature = e.features?.[0];
+			const treeId = treeFeature ? treeFeatureId(treeFeature) : undefined;
+			// Every mouse move would otherwise re-render whatever reads the store.
+			if (treeId !== useTreeStore.getState().hoveredTreeId) {
+				setHoveredTreeId(treeId);
+			}
+			map.getCanvas().style.cursor = treeFeature ? "pointer" : "";
+		};
+
+		const onClick = (e: mapboxgl.MapMouseEvent) => {
+			const treeFeature = e.features?.[0];
+			if (!treeFeature || !isOnMapPage()) {
 				return;
 			}
-			if (e.features?.length === 0) {
-				setHoveredTreeId(undefined);
-			}
-			const treeFeature = e.features[0];
 
 			hideFilterView();
 
 			setSelectedTreeId(treeFeatureId(treeFeature));
 
-			setEaseToStartedByUserClick(true);
+			isEaseToStartedByUserClick.current = true;
 			map.easeTo({
 				center: [
 					//@ts-expect-error no types for geometry.coordinates
@@ -160,13 +150,27 @@ export function useMapTreesInteraction(map: mapboxgl.Map | undefined) {
 				offset: mapTreeZoomedInOffset(window.innerWidth),
 			});
 			map.once("moveend", () => {
-				setEaseToStartedByUserClick(false);
+				isEaseToStartedByUserClick.current = false;
 			});
-		});
+		};
 
-		map.on("mouseleave", "trees", () => {
+		const onMouseLeave = () => {
 			map.getCanvas().style.cursor = "";
 			setHoveredTreeId(undefined);
-		});
-	}, [map, url.pathname]);
+		};
+
+		map.on("zoomend", onZoomEnd);
+		map.on("moveend", onMoveEnd);
+		map.on("mousemove", "trees", onMouseMove);
+		map.on("click", "trees", onClick);
+		map.on("mouseleave", "trees", onMouseLeave);
+
+		return () => {
+			map.off("zoomend", onZoomEnd);
+			map.off("moveend", onMoveEnd);
+			map.off("mousemove", "trees", onMouseMove);
+			map.off("click", "trees", onClick);
+			map.off("mouseleave", "trees", onMouseLeave);
+		};
+	}, [map, isMapLoaded]);
 }

@@ -67,6 +67,21 @@ const zoomSearch = new URL(window.location.href).searchParams.get(zoomUrlKey);
 const latSearch = new URL(window.location.href).searchParams.get(latUrlKey);
 const lngSearch = new URL(window.location.href).searchParams.get(lngUrlKey);
 
+/**
+ * A number from the URL, or the fallback when it is missing or unusable: a
+ * shared link with `lat=abc` must not break the map (or be written back).
+ */
+const numberFromUrl = (
+	value: string | null,
+	fallback: number,
+	{ min = -Infinity, max = Infinity } = {},
+) => {
+	const parsed = value === null ? NaN : parseFloat(value);
+	return Number.isFinite(parsed) && parsed >= min && parsed <= max
+		? parsed
+		: fallback;
+};
+
 const clampAge = (value: string | null, fallback: number) => {
 	const parsed = value === null ? NaN : parseInt(value);
 	return Number.isNaN(parsed)
@@ -100,11 +115,12 @@ export const useFilterStore = create<FilterState>()((set, get) => ({
 
 	isFilterViewVisible: false,
 
-	lat: latSearch ? parseFloat(latSearch) : useMapConstants().MAP_CENTER_LAT,
-	lng: lngSearch ? parseFloat(lngSearch) : useMapConstants().MAP_CENTER_LNG,
-	zoom: zoomSearch
-		? parseFloat(zoomSearch)
-		: useMapConstants().MAP_INITIAL_ZOOM_LEVEL,
+	lat: numberFromUrl(latSearch, useMapConstants().MAP_CENTER_LAT, {
+		min: -90,
+		max: 90,
+	}),
+	lng: numberFromUrl(lngSearch, useMapConstants().MAP_CENTER_LNG),
+	zoom: numberFromUrl(zoomSearch, useMapConstants().MAP_INITIAL_ZOOM_LEVEL),
 	isSomeFilterActive: () => {
 		return (
 			get().treeAgeRange.min !== initialTreeAgeRange.min ||

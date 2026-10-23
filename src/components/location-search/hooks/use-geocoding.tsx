@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export interface GeocodingResult {
 	id: string;
@@ -14,20 +14,46 @@ export interface GeocodingResultState {
 	fetchGeocodingResults: (search: string) => void;
 }
 
+/**
+ * Waits for a pause in typing before asking Mapbox: every request counts
+ * against the geocoding quota.
+ */
+const TYPING_PAUSE_MS = 250;
+
 export function useGeocoding(): GeocodingResultState {
 	const [geocodingResults, setGeocodingResults] = useState<GeocodingResult[]>(
 		[],
 	);
 
+	// The search that is waiting for the typing pause or for its answer.
+	const pending = useRef<{
+		timeoutId?: ReturnType<typeof setTimeout>;
+		controller?: AbortController;
+	}>({});
+
+	const cancelPending = () => {
+		clearTimeout(pending.current.timeoutId);
+		pending.current.controller?.abort();
+		pending.current = {};
+	};
+
+	useEffect(() => cancelPending, []);
+
 	const clearGeocodingResults = () => {
+		cancelPending();
 		setGeocodingResults([]);
 	};
 
-	const fetchGeocodingResults = async (search: string) => {
+	const fetchGeocodingResults = (search: string) => {
+		// An older, slower answer must not overwrite the results of a newer search.
+		cancelPending();
+
 		if (search.trim().length < 2) {
 			setGeocodingResults([]);
 			return;
 		}
+
+		const controller = new AbortController();
 
 		const fetchData = async () => {
 			try {
@@ -42,18 +68,25 @@ export function useGeocoding(): GeocodingResultState {
 				const geocodingUrl = `${
 					import.meta.env.VITE_MAPBOX_API_ENDPOINT
 				}/geocoding/v5/mapbox.places/${encodeURIComponent(search)}.json?${params.toString()}`;
-				const res = await fetch(geocodingUrl);
+				const res = await fetch(geocodingUrl, { signal: controller.signal });
 				if (!res.ok) {
 					return;
 				}
 				const json = (await res.json()) as { features: GeocodingResult[] };
 				setGeocodingResults(json.features);
 			} catch (_) {
-				setGeocodingResults([]);
+				if (!controller.signal.aborted) {
+					setGeocodingResults([]);
+				}
 			}
 		};
 
-		fetchData().catch(console.error);
+		pending.current = {
+			controller,
+			timeoutId: setTimeout(() => {
+				fetchData().catch(console.error);
+			}, TYPING_PAUSE_MS),
+		};
 	};
 
 	return { geocodingResults, clearGeocodingResults, fetchGeocodingResults };

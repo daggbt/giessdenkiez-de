@@ -7,11 +7,13 @@ export function useMapInteraction(map: mapboxgl.Map | undefined) {
 
 	useEffect(() => {
 		if (!map) {
-			return;
+			return undefined;
 		}
 
-		map.on("click", () => {
-			hideFilterView();
-		});
+		map.on("click", hideFilterView);
+
+		return () => {
+			map.off("click", hideFilterView);
+		};
 	}, [map]);
 }
