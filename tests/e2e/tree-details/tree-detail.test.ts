@@ -11,8 +11,9 @@ testWithoutSplashScreen.describe("Tree detail view", () => {
 	testWithoutSplashScreen(
 		"should show a tree the City still waters",
 		async ({ page }) => {
-			const tree = findTree("BABY");
-			await page.goto(`/map?treeId=${tree.id}`);
+			// In the season, so the status is about the City, not the season.
+			const tree = findTree("BABY", { now: IN_SEASON_NOW });
+			await page.goto(`/map?now=${IN_SEASON_DATE}&treeId=${tree.id}`);
 
 			await expect(
 				page.getByText("Tree information", { exact: true }),
@@ -25,6 +26,9 @@ testWithoutSplashScreen.describe("Tree detail view", () => {
 					"The City of Perth waters new trees for their first 2 years, so this tree does not need your help yet.",
 				),
 			).toBeVisible();
+			await expect(page.getByTestId("tree-status")).toHaveText(
+				"Watered by the City of Perth: no need to water yet",
+			);
 
 			// Trees the City waters cannot be adopted-for-watering or watered
 			await expect(page.getByTestId("water-tree-button")).toBeDisabled();
@@ -46,6 +50,10 @@ testWithoutSplashScreen.describe("Tree detail view", () => {
 			const tree = findTree("JUNIOR", { now: IN_SEASON_NOW });
 			await page.goto(`/map?now=${IN_SEASON_DATE}&treeId=${tree.id}`);
 
+			// The weather is stubbed without rain, so all 400 litres are missing.
+			await expect(page.getByTestId("tree-status")).toHaveText(
+				"Thirsty: still needs about 400 litres",
+			);
 			await expect(
 				page.getByText("Needs 400 litres over 30 days"),
 			).toBeVisible();
@@ -59,6 +67,10 @@ testWithoutSplashScreen.describe("Tree detail view", () => {
 		async ({ page }) => {
 			const tree = findTree("JUNIOR", { now: IN_SEASON_NOW });
 			await page.goto(`/map?now=2026-07-15&treeId=${tree.id}`);
+
+			await expect(page.getByTestId("tree-status")).toHaveText(
+				"Outside the watering season. The season runs November–April; until then, no need to water.",
+			);
 
 			await expect(
 				page.getByText("Outside the watering season (May–October)"),

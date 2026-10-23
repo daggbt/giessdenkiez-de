@@ -277,6 +277,18 @@ Outside the watering season (${formatMonthRange(getSeasonMonths().season)}) tree
 			significant: "Community significance",
 			significantGroup: "Significant group",
 		},
+		status: {
+			thirsty: (litres: string) =>
+				`**Thirsty:** still needs about ${litres} litres`,
+			partial: (litres: string) =>
+				`**Watered recently,** but still needs about ${litres} litres`,
+			satisfied: "**Well watered** for now",
+			councilCare: `**Watered by the ${city.councilName}:** no need to water yet`,
+			established: "**Established tree:** no need to water",
+			unknownAge: "**Water needs unknown:** the planting date is not known",
+			offSeason: (seasonMonths: string) =>
+				`**Outside the watering season.** The season runs ${seasonMonths}; until then, no need to water.`,
+		},
 		adoptLoading: "Tree is being adopted...",
 		unadoptLoading: "Adoption is being canceled...",
 		isAdopted: "You have adopted this tree",

@@ -24,7 +24,7 @@ export const Legend: React.FC = () => {
 			${isLegendVisibleDesktop ? "lg:block" : "lg:hidden"}
 			`}
 		>
-			<LegendButton />
+			<LegendButton isVisible={isLegendVisibleDesktop} />
 		</div>
 	);
 };

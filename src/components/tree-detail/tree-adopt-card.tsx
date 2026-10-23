@@ -76,7 +76,7 @@ export const TreeAdoptCard: React.FC<TreeAdoptCardProps> = ({
 						<div className="text-slate-500">{adoptLabel}</div>
 					) : (
 						<InternalAnchorLink
-							href={`/profile?redirectTo=/map?treeId=${treeData.id}&zoom=20`}
+							href={`/profile?redirectTo=/map?treeId=${treeData.id}&zoom=18`}
 							label={adoptLabel}
 						/>
 					)}

@@ -8,6 +8,8 @@ import { TreeAdoptCard } from "./tree-adopt-card";
 import { useTreeStore } from "./stores/tree-store";
 import { useI18nStore } from "../../i18n/i18n-store";
 import { TreeWaterNeed } from "./tree-water-needs/tree-water-needs";
+import { WaterTree } from "./tree-water-needs/water-tree/water-tree";
+import { TreeStatus } from "./tree-status";
 import { useTreeAgeClassification } from "./hooks/use-tree-age-classification";
 import { LastWaterings } from "./last-waterings/last-waterings";
 import { ProblemCard } from "./problem-card";
@@ -75,20 +77,29 @@ export const TreeDetail: React.FC = () => {
 						treeData={treeCoreData}
 						treeAgeClassification={treeAgeClassification}
 					/>
-					{treeTypeInfo && (
-						<TreeFlier info={treeTypeInfo.description}></TreeFlier>
-					)}
-					<TreeAge treeData={treeCoreData} />
-					<TreeFacts treeData={treeCoreData} />
+
+					{/* What a volunteer standing at the tree needs first. */}
+					<div className="flex flex-col gap-2 border-b-2 pb-6 pt-6">
+						<TreeStatus
+							treeAgeClassification={treeAgeClassification}
+							treeWateringData={treeWateringData}
+						/>
+						<WaterTree
+							treeData={treeCoreData}
+							treeAgeClassification={treeAgeClassification}
+						/>
+					</div>
 
 					<TreeWaterNeed
-						treeData={treeCoreData}
 						treeAgeClassification={treeAgeClassification}
 						treeWateringData={treeWateringData}
 					/>
+					<LastWaterings treeWateringData={treeWateringData} />
 
-					{treeCoreData && (
-						<LastWaterings treeWateringData={treeWateringData} />
+					<TreeAge treeData={treeCoreData} />
+					<TreeFacts treeData={treeCoreData} />
+					{treeTypeInfo && (
+						<TreeFlier info={treeTypeInfo.description}></TreeFlier>
 					)}
 					<ProblemCard />
 				</div>

@@ -18,7 +18,7 @@ export function useMapTreesInteraction(map: mapboxgl.Map | undefined) {
 
 	const { hideFilterView } = useFilterStore();
 
-	const { MAP_MAX_ZOOM_LEVEL, mapTreeZoomedInOffset } = useMapConstants();
+	const { MAP_TREE_ZOOM_LEVEL, mapTreeZoomedInOffset } = useMapConstants();
 
 	const { setHoveredTreeId } = useHoveredTree(map);
 	const { setSelectedTreeId } = useSelectedTree(map);
@@ -37,7 +37,8 @@ export function useMapTreesInteraction(map: mapboxgl.Map | undefined) {
 		setZoom,
 	} = useFilterStore();
 
-	const { filteredCircleColor } = useTreeCircleStyle();
+	const { filteredCircleColor, circleRadius, circleOpacity, circleSortKey } =
+		useTreeCircleStyle();
 
 	const { clearSearch } = useSearchStore();
 
@@ -51,15 +52,15 @@ export function useMapTreesInteraction(map: mapboxgl.Map | undefined) {
 		if (!map || !isMapLoaded) {
 			return;
 		}
-		map.setPaintProperty(
-			"trees",
-			"circle-color",
-			filteredCircleColor({
-				areOnlyAllAdoptedTreesVisible,
-				areLastWateredTreesVisible,
-				treeAgeRange,
-			}),
-		);
+		const filters = {
+			areOnlyAllAdoptedTreesVisible,
+			areLastWateredTreesVisible,
+			treeAgeRange,
+		};
+		map.setPaintProperty("trees", "circle-color", filteredCircleColor(filters));
+		map.setPaintProperty("trees", "circle-radius", circleRadius(filters));
+		map.setPaintProperty("trees", "circle-opacity", circleOpacity(filters));
+		map.setLayoutProperty("trees", "circle-sort-key", circleSortKey(filters));
 	}, [
 		map,
 		isMapLoaded,
@@ -79,7 +80,7 @@ export function useMapTreesInteraction(map: mapboxgl.Map | undefined) {
 
 			map?.easeTo({
 				center: [treeCoreData.lng, treeCoreData.lat],
-				zoom: MAP_MAX_ZOOM_LEVEL,
+				zoom: MAP_TREE_ZOOM_LEVEL,
 				duration: 1500,
 				essential: true,
 				offset: mapTreeZoomedInOffset(window.innerWidth),
@@ -153,7 +154,7 @@ export function useMapTreesInteraction(map: mapboxgl.Map | undefined) {
 					//@ts-expect-error no types for geometry.coordinates
 					treeFeature.geometry.coordinates[1],
 				],
-				zoom: MAP_MAX_ZOOM_LEVEL,
+				zoom: MAP_TREE_ZOOM_LEVEL,
 				essential: true,
 				duration: 1500,
 				offset: mapTreeZoomedInOffset(window.innerWidth),

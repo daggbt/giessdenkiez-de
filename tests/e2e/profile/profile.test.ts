@@ -49,7 +49,7 @@ testWithAdoptedTree.describe("Profile with an adopted tree", () => {
 			});
 			await expect(treeLink).toBeVisible();
 			expect(await treeLink.getAttribute("href")).toBe(
-				`/map?treeId=${adoptedTreeId}&zoom=20`,
+				`/map?treeId=${adoptedTreeId}&zoom=18`,
 			);
 		},
 	);

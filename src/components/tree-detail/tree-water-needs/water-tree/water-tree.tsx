@@ -49,7 +49,7 @@ export const WaterTree: React.FC<WaterTreeProps> = ({
 				{!isLoggedIn() && (
 					<p>
 						<InternalAnchorLink
-							href={`/profile?redirectTo=/map?treeId=${treeData.id}&zoom=20`}
+							href={`/profile?redirectTo=/map?treeId=${treeData.id}&zoom=18`}
 							label={i18n.treeDetail.waterNeed.loginToWater.login}
 						/>{" "}
 						{i18n.treeDetail.waterNeed.loginToWater.toWater}

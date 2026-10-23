@@ -29,7 +29,7 @@ export const TreeCard: React.FC<TreeCardProps> = ({
 			className="shadow-gdk-soft flex flex-col gap-3 rounded-2xl border-2 py-4 px-3.5 justify-between"
 		>
 			<div className="flex justify-between">
-				<InternalAnchorLink href={`/map?treeId=${id}&zoom=20`} label={name} />
+				<InternalAnchorLink href={`/map?treeId=${id}&zoom=18`} label={name} />
 				<div className="pl-1">
 					<button
 						type="button"

@@ -9,6 +9,17 @@ import tailwindConfig from "../../../../tailwind.config.js";
 import { TreeAgeRange } from "../../filter/filter-store";
 const fullConfig = resolveConfig(tailwindConfig);
 
+export interface TreeFilters {
+	areOnlyAllAdoptedTreesVisible: boolean;
+	areLastWateredTreesVisible: boolean;
+	treeAgeRange: TreeAgeRange;
+}
+
+/** The statuses that are not green: what volunteers look for on the map. */
+const STATUSES_NEEDING_HELP = Object.entries(NEED_STATUS_COLOR_TOKEN)
+	.filter(([, token]) => token !== "gdk-neon-green")
+	.map(([status]) => status);
+
 export function useTreeCircleStyle() {
 	const {
 		TREE_DEFAULT_COLOR,
@@ -17,67 +28,30 @@ export function useTreeCircleStyle() {
 		TREE_YELLOW_COLOR,
 	} = useMapConstants();
 
-	const circleRadius: {
-		base: number;
-		stops: [[number, number], [number, number]];
-	} = {
-		base: 1.75,
-		stops: [
-			[11, 1],
-			[22, 100],
-		],
-	};
+	const isHoveredOrSelected: Expression = [
+		"any",
+		["boolean", ["feature-state", "hover"], false],
+		["boolean", ["feature-state", "select"], false],
+	];
 
-	const circleOpacity = [
-		"interpolate",
-		["linear"],
-		["zoom"],
-		10,
-		0.7,
-		20,
-		0.5,
-	] as Expression;
-
+	// A white outline keeps neighbouring dots apart on a light base map.
 	const circleStrokeColor = [
 		"case",
-		["boolean", ["feature-state", "hover"], false],
+		isHoveredOrSelected,
 		fullConfig.theme.colors["gdk-blue"],
-		["boolean", ["feature-state", "select"], false],
-		fullConfig.theme.colors["gdk-blue"],
-		"#000000",
+		"#FFFFFF",
 	] as Expression;
 
 	const circleStrokeWidth = [
 		"interpolate",
-		["exponential", 2],
+		["linear"],
 		["zoom"],
+		12,
+		["case", isHoveredOrSelected, 2, 0.5],
 		16,
-		[
-			"case",
-			["boolean", ["feature-state", "hover"], false],
-			2,
-			["boolean", ["feature-state", "select"], false],
-			2,
-			0,
-		],
-		18,
-		[
-			"case",
-			["boolean", ["feature-state", "hover"], false],
-			6,
-			["boolean", ["feature-state", "select"], false],
-			6,
-			0,
-		],
+		["case", isHoveredOrSelected, 3, 1],
 		20,
-		[
-			"case",
-			["boolean", ["feature-state", "hover"], false],
-			10,
-			["boolean", ["feature-state", "select"], false],
-			10,
-			0,
-		],
+		["case", isHoveredOrSelected, 6, 1.5],
 	] as Expression;
 
 	/**
@@ -98,16 +72,12 @@ export function useTreeCircleStyle() {
 		TREE_DEFAULT_COLOR,
 	];
 
-	const filteredCircleColor = ({
+	/** Matches the trees the active filters grey out; undefined without filters. */
+	const filteredOut = ({
 		areOnlyAllAdoptedTreesVisible,
 		areLastWateredTreesVisible,
 		treeAgeRange,
-	}: {
-		areOnlyAllAdoptedTreesVisible: boolean;
-		areLastWateredTreesVisible: boolean;
-		treeAgeRange: TreeAgeRange;
-	}): Expression => {
-		// Trees matching any of these are greyed out.
+	}: TreeFilters): Expression | undefined => {
 		const hidden: Expression[] = [];
 
 		const isAgeFilterActive =
@@ -132,16 +102,69 @@ export function useTreeCircleStyle() {
 			hidden.push(["<=", ["get", "watered_30d_l"], 0]);
 		}
 
-		if (hidden.length === 0) {
-			return needColor;
-		}
-
-		return ["case", ["any", ...hidden], TREE_GRAY_COLOR, needColor];
+		return hidden.length === 0 ? undefined : ["any", ...hidden];
 	};
+
+	/** Thirsty or partly watered, and not greyed out by a filter. */
+	const needsHelp = (filters: TreeFilters): Expression => {
+		const needsWater: Expression = [
+			"in",
+			["get", "need"],
+			["literal", STATUSES_NEEDING_HELP],
+		];
+		const hidden = filteredOut(filters);
+		return hidden ? ["all", needsWater, ["!", hidden]] : needsWater;
+	};
+
+	const filteredCircleColor = (filters: TreeFilters): Expression => {
+		const hidden = filteredOut(filters);
+		return hidden ? ["case", hidden, TREE_GRAY_COLOR, needColor] : needColor;
+	};
+
+	/** Trees that need help are drawn larger, opaque and on top of the others. */
+	const circleRadius = (filters: TreeFilters): Expression => {
+		const isProminent = needsHelp(filters);
+		const radius = (pixels: number): Expression => [
+			"case",
+			isProminent,
+			pixels * 1.4,
+			pixels,
+		];
+		return [
+			"interpolate",
+			["linear"],
+			["zoom"],
+			12,
+			radius(1.5),
+			14,
+			radius(3),
+			16,
+			radius(6),
+			18,
+			radius(12),
+			20,
+			radius(24),
+		];
+	};
+
+	const circleOpacity = (filters: TreeFilters): Expression => [
+		"case",
+		needsHelp(filters),
+		1,
+		0.85,
+	];
+
+	const circleSortKey = (filters: TreeFilters): Expression => [
+		"case",
+		needsHelp(filters),
+		1,
+		0,
+	];
 
 	return {
 		circleRadius,
 		circleOpacity,
+		circleSortKey,
 		circleStrokeColor,
 		circleStrokeWidth,
 		filteredCircleColor,

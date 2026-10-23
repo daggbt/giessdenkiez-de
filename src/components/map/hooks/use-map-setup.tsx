@@ -50,6 +50,7 @@ export function useMapSetup(
 	const {
 		circleRadius,
 		circleOpacity,
+		circleSortKey,
 		circleStrokeColor,
 		filteredCircleColor,
 		circleStrokeWidth,
@@ -129,21 +130,25 @@ export function useMapSetup(
 				areLastWateredTreesVisible,
 				treeAgeRange,
 			} = useFilterStore.getState();
+			const filters = {
+				areOnlyAllAdoptedTreesVisible,
+				areLastWateredTreesVisible,
+				treeAgeRange,
+			};
 
 			initializedMap.addLayer({
 				id: "trees",
 				type: "circle",
 				source: "trees",
+				layout: {
+					"circle-sort-key": circleSortKey(filters),
+				},
 				paint: {
 					"circle-pitch-alignment": "map",
-					"circle-radius": circleRadius,
-					"circle-opacity": circleOpacity,
+					"circle-radius": circleRadius(filters),
+					"circle-opacity": circleOpacity(filters),
 					"circle-stroke-color": circleStrokeColor,
-					"circle-color": filteredCircleColor({
-						areOnlyAllAdoptedTreesVisible,
-						areLastWateredTreesVisible,
-						treeAgeRange,
-					}),
+					"circle-color": filteredCircleColor(filters),
 					"circle-stroke-width": circleStrokeWidth,
 				},
 			});

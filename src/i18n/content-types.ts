@@ -235,6 +235,15 @@ interface TreeDetail {
 		significant: string;
 		significantGroup: string;
 	};
+	status: {
+		thirsty: (litres: string) => string;
+		partial: (litres: string) => string;
+		satisfied: string;
+		councilCare: string;
+		established: string;
+		unknownAge: string;
+		offSeason: (seasonMonths: string) => string;
+	};
 	adoptHintTitle: string;
 	adoptHint: string;
 	adoptErrorMessage: string;

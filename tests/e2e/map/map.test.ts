@@ -172,3 +172,22 @@ testWithoutSplashScreen.describe("Map - when it cannot be shown", () => {
 		},
 	);
 });
+
+testWithoutSplashScreen.describe("Map legend", () => {
+	testWithoutSplashScreen.use({ mapMode: "stubbed" });
+
+	testWithoutSplashScreen(
+		"should be open on the first visit only",
+		async ({ page }) => {
+			await page.goto("/map");
+
+			await expect(page.getByText("Thirsty — needs water")).toBeVisible();
+			// Nothing is greyed out without a filter.
+			await expect(page.getByText("Filtered out")).toBeHidden();
+
+			await page.reload();
+			await expect(page.getByRole("button", { name: "Legend" })).toBeVisible();
+			await expect(page.getByText("Thirsty — needs water")).toBeHidden();
+		},
+	);
+});

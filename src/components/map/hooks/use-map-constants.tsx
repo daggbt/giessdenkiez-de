@@ -10,6 +10,8 @@ export function useMapConstants() {
 	const MAP_LOCATION_ZOOM_LEVEL = parseInt(
 		import.meta.env.VITE_MAP_LOCATION_ZOOM_LEVEL,
 	);
+	// Close enough to pick out the tree, far enough to still see the streets.
+	const MAP_TREE_ZOOM_LEVEL = Math.min(18, MAP_MAX_ZOOM_LEVEL);
 	const TREE_DEFAULT_COLOR = fullConfig.theme.colors["gdk-neon-green"];
 
 	const TREE_GRAY_COLOR = fullConfig.theme.colors["gdk-tree-gray"];
@@ -36,6 +38,7 @@ export function useMapConstants() {
 		MAP_PITCH_DEGREES,
 		MAP_MAX_ZOOM_LEVEL,
 		MAP_LOCATION_ZOOM_LEVEL,
+		MAP_TREE_ZOOM_LEVEL,
 		MAP_MIN_ZOOM_LEVEL,
 		MAP_INITIAL_ZOOM_LEVEL,
 		TREE_DEFAULT_COLOR,

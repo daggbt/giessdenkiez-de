@@ -35,6 +35,9 @@ testWithLoggedInUser.describe("Watering a tree", () => {
 			await expect
 				.poll(() => readTreeState(page, tree.id))
 				.toMatchObject({ need: "PARTIAL", watered_30d_l: 50 });
+			await expect(page.getByTestId("tree-status")).toHaveText(
+				"Watered recently, but still needs about 350 litres",
+			);
 
 			// ... and watering it up to the target turns it green.
 			await page.getByTestId("water-tree-button").click();
@@ -44,6 +47,9 @@ testWithLoggedInUser.describe("Watering a tree", () => {
 			await expect
 				.poll(() => readTreeState(page, tree.id))
 				.toMatchObject({ need: "SATISFIED" });
+			await expect(page.getByTestId("tree-status")).toHaveText(
+				"Well watered for now",
+			);
 
 			// Deleting the large watering takes it back.
 			await page.getByTestId("delete-watering-button").first().click();
