@@ -38,6 +38,9 @@ interface TestUser {
 	client: SupabaseClient;
 }
 
+/** `tree_activity_30d`: tree id -> [litres in 30 days, waterings in 30 days, adoptions]. */
+type Activity = Record<string, [number, number, number]>;
+
 describe.skipIf(!reachable)("Supabase schema, RLS and RPCs", () => {
 	// url and keys are defined whenever `reachable` is true
 	const admin = createClient(url!, serviceRoleKey!, clientOptions);
@@ -253,11 +256,9 @@ describe.skipIf(!reachable)("Supabase schema, RLS and RPCs", () => {
 			]);
 			expect(insertError).toBeNull();
 			const { data } = await anon.rpc("tree_activity_30d");
-			const row = (data as Array<Record<string, number | string>>).find(
-				(r) => r.tree_id === tree,
-			);
-			expect(Number(row?.watered_litres_30d)).toBe(50);
-			expect(Number(row?.watering_count_30d)).toBe(2);
+			const [litres, waterings] = (data as Activity)[tree];
+			expect(litres).toBe(50);
+			expect(waterings).toBe(2);
 		});
 	});
 
@@ -275,10 +276,8 @@ describe.skipIf(!reachable)("Supabase schema, RLS and RPCs", () => {
 			expect(duplicate.error).not.toBeNull();
 
 			const { data } = await anon.rpc("tree_activity_30d");
-			const row = (data as Array<Record<string, number | string>>).find(
-				(r) => r.tree_id === tree,
-			);
-			expect(Number(row?.adopted_count)).toBe(1);
+			const [, , adoptions] = (data as Activity)[tree];
+			expect(adoptions).toBe(1);
 
 			await userA.client
 				.from("trees_adopted")
@@ -306,6 +305,82 @@ describe.skipIf(!reachable)("Supabase schema, RLS and RPCs", () => {
 				.eq("tree_id", treeIds[1])
 				.eq("uuid", userB.id);
 			expect(data).toHaveLength(1);
+		});
+	});
+
+	// PostgREST cuts row results off at `max_rows` (1000, supabase/config.toml)
+	// without an error, so these return a single jsonb value instead.
+	describe("results larger than PostgREST's row limit", () => {
+		const count = 1001;
+		let manyTreeIds: string[] = [];
+		let collector: TestUser;
+
+		beforeAll(async () => {
+			// Two requests: the service role is subject to the row limit too.
+			for (const [from, to] of [
+				[0, 999],
+				[1000, 1099],
+			]) {
+				const { data, error } = await admin
+					.from("trees")
+					.select("id")
+					.order("id")
+					.range(from, to);
+				if (error) {
+					throw error;
+				}
+				manyTreeIds.push(...data.map((tree) => tree.id));
+			}
+			manyTreeIds = manyTreeIds
+				.filter((id) => !treeIds.includes(id))
+				.slice(0, count);
+			collector = await createUser(randomName("collector"));
+		});
+
+		afterAll(async () => {
+			await admin.from("trees_watered").delete().eq("uuid", collector.id);
+			await admin.from("trees_adopted").delete().eq("uuid", collector.id);
+		});
+
+		test("tree_activity_30d covers every tree with activity", async () => {
+			const { error } = await admin
+				.from("trees_adopted")
+				.insert(
+					manyTreeIds.map((tree_id) => ({ tree_id, uuid: collector.id })),
+				);
+			expect(error).toBeNull();
+
+			const { data, error: rpcError } = await anon.rpc("tree_activity_30d");
+			expect(rpcError).toBeNull();
+			const activity = data as Activity;
+			expect(Object.keys(activity).length).toBeGreaterThan(1000);
+			const missing = manyTreeIds.filter((id) => !(activity[id]?.[2] >= 1));
+			expect(missing).toEqual([]);
+		});
+
+		test("waterings_for_user returns all of a user's waterings", async () => {
+			const { error } = await admin.from("trees_watered").insert(
+				manyTreeIds.map((tree_id) => ({
+					tree_id,
+					amount: 1,
+					uuid: collector.id,
+				})),
+			);
+			expect(error).toBeNull();
+
+			const { data, error: rpcError } = await collector.client.rpc(
+				"waterings_for_user",
+				{ u_id: collector.id },
+			);
+			expect(rpcError).toBeNull();
+			expect(data).toHaveLength(manyTreeIds.length);
+			expect(data[0]).toEqual({
+				id: expect.any(Number),
+				tree_id: expect.any(String),
+				amount: 1,
+				timestamp: expect.any(String),
+				username: collector.username,
+			});
 		});
 	});
 

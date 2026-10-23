@@ -8,7 +8,6 @@ import {
 	enrichFeatures,
 	EnrichedTreeProperties,
 	toFeatureCollection,
-	TreeActivity,
 	TreeFeature,
 } from "../../domain/tree-layer";
 import { useWeatherStore } from "../../weather/weather-store";
@@ -35,9 +34,14 @@ interface TreesLayerStore {
 	refresh: () => Promise<void>;
 }
 
-interface ActivityRow extends TreeActivity {
-	tree_id: string;
-}
+/**
+ * What `tree_activity_30d` returns: one object instead of rows, because
+ * PostgREST cuts row results off at 1000.
+ */
+type ActivityResponse = Record<
+	string,
+	[litres30d: number, waterings30d: number, adoptions: number]
+>;
 
 const emptyData: FeatureCollection<Point, EnrichedTreeProperties> = {
 	type: "FeatureCollection",
@@ -75,16 +79,23 @@ async function fetchActivity(): Promise<ActivityById | undefined> {
 		console.error("Failed to load tree activity", error);
 		return undefined;
 	}
-	const activityById: ActivityById = {};
-	for (const row of (data ?? []) as ActivityRow[]) {
-		activityById[row.tree_id] = {
-			// numeric and bigint columns can arrive as strings
-			watered_litres_30d: Number(row.watered_litres_30d),
-			watering_count_30d: Number(row.watering_count_30d),
-			adopted_count: Number(row.adopted_count),
-		};
+	try {
+		const activityById: ActivityById = {};
+		for (const [treeId, [litres, waterings, adoptions]] of Object.entries(
+			(data ?? {}) as ActivityResponse,
+		)) {
+			activityById[treeId] = {
+				watered_litres_30d: Number(litres),
+				watering_count_30d: Number(waterings),
+				adopted_count: Number(adoptions),
+			};
+		}
+		return activityById;
+	} catch (parseError) {
+		// E.g. the app deployed before the database migration: draw the trees anyway.
+		console.error("Unexpected tree activity data", parseError);
+		return undefined;
 	}
-	return activityById;
 }
 
 function enrich(activityById: ActivityById) {

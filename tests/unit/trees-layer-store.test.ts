@@ -3,7 +3,7 @@ import type { TreeFeature } from "../../src/domain/tree-layer";
 
 vi.mock("../../src/auth/supabase-client", () => ({
 	supabaseClient: {
-		rpc: vi.fn(async () => ({ data: [], error: null })),
+		rpc: vi.fn(async () => ({ data: {}, error: null })),
 	},
 }));
 

@@ -18,7 +18,7 @@ export interface TreeProperties {
 	planted_date_precision: PlantedDatePrecision;
 }
 
-/** Row of the `tree_activity_30d` RPC. */
+/** A tree's entry in the `tree_activity_30d` RPC. */
 export interface TreeActivity {
 	watered_litres_30d: number;
 	watering_count_30d: number;

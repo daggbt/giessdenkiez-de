@@ -196,15 +196,16 @@ export const useProfileStore = create<ProfileStore>()((set, get) => ({
 
 		const userId = useAuthStore.getState().session?.user.id;
 
-		const { data, error } = await supabaseClient
-			.rpc("waterings_for_user", { u_id: userId })
-			.select("*");
+		// One jsonb array rather than rows, which PostgREST cuts off at 1000.
+		const { data, error } = await supabaseClient.rpc("waterings_for_user", {
+			u_id: userId,
+		});
 
 		if (error) {
 			throw new Error("Failed to fetch wateredbyuser data");
 		}
 
-		set({ userWaterings: data });
+		set({ userWaterings: data as UserWaterings[] });
 
 		/**
 		 * we also need to refresh the adoptedTreeInfo as they base
