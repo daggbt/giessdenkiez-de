@@ -11,6 +11,9 @@ const ignoredMessages = [
 	/Failed to fetch/i,
 	// WebKit's wording for the same thing
 	/Load failed/i,
+	// The app's own request timeouts (see src/utils/fetch-with-timeout.ts),
+	// which tests that hold a response back can run into.
+	/No response within \d+ ms/,
 	/WebGL/i,
 	/GPU stall/i,
 	/does not exist in the map's style/i,
