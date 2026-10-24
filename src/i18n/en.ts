@@ -80,7 +80,7 @@ export const en: Content = {
 	},
 	legend: {
 		title: "Legend",
-		greenTrees: "Fine for now, or watered by the City",
+		greenTrees: "Fine for now, or watered by its council",
 		yellowTrees: "Watered recently, needs more",
 		orangeTrees: "Thirsty \u2014 needs water",
 		grayTrees: "Filtered out",
