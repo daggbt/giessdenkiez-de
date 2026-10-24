@@ -23,8 +23,6 @@ When new files arrive in `supabase/migrations`, run `npx supabase migration up`:
 
 `npx supabase status` prints the local API URL, keys and the mail UI (confirmation and reset emails land there). Put the local service-role key in `TEST_SUPABASE_SERVICE_ROLE_KEY` for the end-to-end tests.
 
-To see the app inside the watering season, tell it which day it is: `VITE_APP_DATE=2027-01-15 npm run dev`. Without it, the app uses today's date. Only the season and the trees' ages follow that date; waterings and rain keep their real dates, so yellow trees appear once someone logs a watering. In dev, `?now=2027-01-15` in the URL does the same for one page load. `npm run build` builds `VITE_APP_DATE` into the app, so leave it unset for a real deployment.
-
 Scripts:
 
 | Script                     | What it does                                                                           |
@@ -38,6 +36,37 @@ Scripts:
 | `npm run import:trees`     | Re-imports the councils' trees, see below                                              |
 
 `test:e2e` is not part of CI because CI does not start Supabase. It runs one worker on purpose: the map renders with software WebGL. It reuses a server already listening on `VITE_PORT`, so stop any old `vite preview` before running it, otherwise it tests a stale build.
+
+### Run on a chosen date
+
+The watering season runs from 1 November to 30 April, and outside it every tree is green. To see the colours, start the app with a date inside the season:
+
+```bash
+npx supabase start                      # if it is not running yet
+VITE_APP_DATE=2027-01-05 npm run dev    # the app acts as if it is 5 January 2027
+```
+
+Then open http://localhost:5173/map.
+
+- Stop a dev server that is already running first: the date is read when the server starts. Without the flag, the app uses today's date.
+- Only the season and the trees' ages follow the date. Waterings and rain keep their real dates, so yellow trees need a logged watering (see the next section).
+- In dev, `?now=2027-01-05` in the URL does the same for one page load.
+- A value that is not a date like `2027-01-05` is ignored, with a warning in the browser console.
+- `npm run build` builds `VITE_APP_DATE` into the app, so leave it unset for a real deployment.
+
+### Create a profile on the local app
+
+Profiles are stored in the local Supabase database, and its emails go to the mail UI instead of real inboxes, so any email address works.
+
+1. With the stack and the app running, open http://localhost:5173/profile and choose **Register now**.
+2. Fill in the form:
+   - **Username:** 3–50 letters or numbers, no spaces. Everyone sees it next to your waterings.
+   - **Email:** any address, e.g. `me@example.com`.
+   - **Password:** at least 8 characters, with upper and lower case letters, a number and a special character, e.g. `Watering-2027`.
+3. Open the mail UI at http://localhost:57324, open the newest email and click its confirmation link.
+4. If the app has not logged you in, log in at http://localhost:5173/profile.
+
+To see a yellow tree, open an orange tree on the map, choose **I watered**, enter the litres (e.g. `50`) and choose **Save**. Once rain and waterings reach 400 litres in 30 days, the tree turns green. To remove the profile, go to **Profile** and choose **Delete account**; `npx supabase db reset` removes every local profile and watering.
 
 ## Refresh the tree data
 
