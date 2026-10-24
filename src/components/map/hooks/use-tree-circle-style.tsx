@@ -1,19 +1,12 @@
 import { Expression } from "mapbox-gl";
 import { useMapConstants } from "./use-map-constants.js";
 import resolveConfig from "tailwindcss/resolveConfig";
-import { MAX_AGE_BUCKET } from "../../../domain/tree-layer";
 import { NEED_STATUS_COLOR_TOKEN } from "../../../domain/tree-status";
 
 //@ts-expect-error tailwindConfig has no type definition
 import tailwindConfig from "../../../../tailwind.config.js";
-import { TreeAgeRange } from "../../filter/filter-store";
+import { filteredOut, TreeFilters } from "../tree-filters";
 const fullConfig = resolveConfig(tailwindConfig);
-
-export interface TreeFilters {
-	areOnlyAllAdoptedTreesVisible: boolean;
-	areLastWateredTreesVisible: boolean;
-	treeAgeRange: TreeAgeRange;
-}
 
 /** The statuses that are not green: what volunteers look for on the map. */
 const STATUSES_NEEDING_HELP = Object.entries(NEED_STATUS_COLOR_TOKEN)
@@ -71,39 +64,6 @@ export function useTreeCircleStyle() {
 			.flatMap(([status, token]) => [status, tokenColors[token]]),
 		TREE_DEFAULT_COLOR,
 	];
-
-	/** Matches the trees the active filters grey out; undefined without filters. */
-	const filteredOut = ({
-		areOnlyAllAdoptedTreesVisible,
-		areLastWateredTreesVisible,
-		treeAgeRange,
-	}: TreeFilters): Expression | undefined => {
-		const hidden: Expression[] = [];
-
-		const isAgeFilterActive =
-			treeAgeRange.min > 0 || treeAgeRange.max < MAX_AGE_BUCKET;
-		if (isAgeFilterActive) {
-			// -1 is a tree of unknown age
-			hidden.push(["==", ["get", "age_bucket"], -1]);
-			if (treeAgeRange.min > 0) {
-				hidden.push(["<", ["get", "age_bucket"], treeAgeRange.min]);
-			}
-			// the oldest bucket means "this age and older"
-			if (treeAgeRange.max < MAX_AGE_BUCKET) {
-				hidden.push([">", ["get", "age_bucket"], treeAgeRange.max]);
-			}
-		}
-
-		if (areOnlyAllAdoptedTreesVisible) {
-			hidden.push(["!", ["get", "adopted"]]);
-		}
-
-		if (areLastWateredTreesVisible) {
-			hidden.push(["<=", ["get", "watered_30d_l"], 0]);
-		}
-
-		return hidden.length === 0 ? undefined : ["any", ...hidden];
-	};
 
 	/** Thirsty or partly watered, and not greyed out by a filter. */
 	const needsHelp = (filters: TreeFilters): Expression => {

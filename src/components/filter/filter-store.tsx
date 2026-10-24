@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { MAX_AGE_BUCKET } from "../../domain/tree-layer";
+import type { NeedColor } from "../../domain/tree-status";
 import { replaceUrlSearchParam } from "../../utils/url-utils";
 import { useUrlState } from "../router/store";
 import { useMapConstants } from "../map/hooks/use-map-constants";
@@ -24,6 +25,13 @@ export interface FilterState {
 	setTreeAgeRange: (min: number, max: number) => void;
 	setAreOnlyAllAdoptedTreesVisible: (showOnlyAllAdoptedTrees: boolean) => void;
 	setAreLastWateredTreesVisible: (showLastWateredTrees: boolean) => void;
+	/**
+	 * A colour picked in the legend: trees of the other colours are greyed out.
+	 * The legend shows it, so it is not counted, reset or kept in the URL like
+	 * the filters above.
+	 */
+	colorFilter: NeedColor | undefined;
+	setColorFilter: (color: NeedColor | undefined) => void;
 	showFilterView: () => void;
 	hideFilterView: () => void;
 	toggleFilterView: () => void;
@@ -198,6 +206,12 @@ export const useFilterStore = create<FilterState>()((set, get) => ({
 			[get().treeAgeRange.max.toString()],
 		);
 		useUrlState.getState().setSearchParams(updatedSearchParamsMax);
+	},
+
+	colorFilter: undefined,
+
+	setColorFilter: (colorFilter) => {
+		set({ colorFilter });
 	},
 
 	toggleFilterView: () => {

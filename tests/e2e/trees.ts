@@ -57,6 +57,35 @@ export function findTree(
 	return tree;
 }
 
+export interface TreeLocation {
+	id: string;
+	coordinates: [number, number];
+}
+
+/** Where all trees of an age class are, unlike `findTree` also those with gaps in their data. */
+export function locateTrees(ageClass: AgeClass, now: Date): TreeLocation[] {
+	return collection.features
+		.filter(({ properties }) => classifyTreeAge(properties, now) === ageClass)
+		.map(({ properties, geometry }) => ({
+			id: properties.id,
+			coordinates: geometry.coordinates,
+		}));
+}
+
+/** Metres between two `[lng, lat]` points; precise enough within a city. */
+export function metresBetween(
+	[lngA, latA]: [number, number],
+	[lngB, latB]: [number, number],
+): number {
+	const metresPerDegree = 111_320;
+	const x =
+		(lngA - lngB) *
+		metresPerDegree *
+		Math.cos(((latA + latB) / 2) * (Math.PI / 180));
+	const y = (latA - latB) * metresPerDegree;
+	return Math.hypot(x, y);
+}
+
 /** `[lng, lat]` of a tree in the committed GeoJSON. */
 export function treeCoordinates(treeId: string): [number, number] {
 	const feature = collection.features.find(

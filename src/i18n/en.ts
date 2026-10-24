@@ -50,6 +50,13 @@ export const en: Content = {
 		yellowTrees: "Watered recently, needs more",
 		orangeTrees: "Thirsty \u2014 needs water",
 		grayTrees: "Filtered out",
+		pickColorHint: "Tap a colour to see where those trees are.",
+		unpickColorHint: "Tap the colour again to see all trees.",
+		noTrees: {
+			offSeason: `The watering season runs ${formatMonthRange(getSeasonMonths().season)}. Until then, all trees are green.`,
+			filters: "No trees of this colour match your filters.",
+			none: "No trees have this colour right now.",
+		},
 	},
 	navbar: {
 		map: "Map",

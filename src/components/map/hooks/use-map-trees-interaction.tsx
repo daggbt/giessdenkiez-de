@@ -29,11 +29,13 @@ export function useMapTreesInteraction(map: mapboxgl.Map | undefined) {
 		treeAgeRange,
 		areOnlyAllAdoptedTreesVisible,
 		areLastWateredTreesVisible,
+		colorFilter,
 	] = useFilterStore(
 		useShallow((store) => [
 			store.treeAgeRange,
 			store.areOnlyAllAdoptedTreesVisible,
 			store.areLastWateredTreesVisible,
+			store.colorFilter,
 		]),
 	);
 
@@ -54,6 +56,7 @@ export function useMapTreesInteraction(map: mapboxgl.Map | undefined) {
 			areOnlyAllAdoptedTreesVisible,
 			areLastWateredTreesVisible,
 			treeAgeRange,
+			colorFilter,
 		};
 		map.setPaintProperty("trees", "circle-color", filteredCircleColor(filters));
 		map.setPaintProperty("trees", "circle-radius", circleRadius(filters));
@@ -65,6 +68,7 @@ export function useMapTreesInteraction(map: mapboxgl.Map | undefined) {
 		areOnlyAllAdoptedTreesVisible,
 		areLastWateredTreesVisible,
 		treeAgeRange,
+		colorFilter,
 	]);
 
 	useEffect(() => {

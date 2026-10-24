@@ -41,11 +41,12 @@ export function getNeedStatus({
 	return watered30dL > 0 ? "PARTIAL" : "THIRSTY";
 }
 
+/** A tree's colour on the map and in the legend, as a Tailwind colour name. */
+export type NeedColor =
+	"gdk-neon-green" | "gdk-tree-yellow" | "gdk-tree-orange";
+
 // Yellow means "someone watered it recently but it is still short".
-export const NEED_STATUS_COLOR_TOKEN: Record<
-	NeedStatus,
-	"gdk-neon-green" | "gdk-tree-yellow" | "gdk-tree-orange"
-> = {
+export const NEED_STATUS_COLOR_TOKEN: Record<NeedStatus, NeedColor> = {
 	OFF_SEASON: "gdk-neon-green",
 	COUNCIL_CARE: "gdk-neon-green",
 	ESTABLISHED: "gdk-neon-green",
@@ -54,3 +55,10 @@ export const NEED_STATUS_COLOR_TOKEN: Record<
 	PARTIAL: "gdk-tree-yellow",
 	THIRSTY: "gdk-tree-orange",
 };
+
+/** The statuses drawn in `color`. */
+export function statusesWithColor(color: NeedColor): NeedStatus[] {
+	return (Object.keys(NEED_STATUS_COLOR_TOKEN) as NeedStatus[]).filter(
+		(status) => NEED_STATUS_COLOR_TOKEN[status] === color,
+	);
+}

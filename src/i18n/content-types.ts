@@ -15,6 +15,16 @@ interface Legend {
 	yellowTrees: string;
 	orangeTrees: string;
 	grayTrees: string;
+	/** Below the colours while none is picked. */
+	pickColorHint: string;
+	/** Below the colours while one is picked. */
+	unpickColorHint: string;
+	/** Instead of the hint when a picked colour has no trees, by reason. */
+	noTrees: {
+		offSeason: string;
+		filters: string;
+		none: string;
+	};
 }
 
 interface Navbar {

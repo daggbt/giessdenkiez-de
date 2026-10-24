@@ -46,6 +46,14 @@ async function clickMapCentre(page: Page) {
 }
 
 testWithoutSplashScreen.describe("Map navigation", () => {
+	// The legend is open on a first visit, and on a phone it covers the middle
+	// of the map, where these tests click.
+	testWithoutSplashScreen.beforeEach(async ({ page }) => {
+		await page.addInitScript(() =>
+			window.localStorage.setItem("legend-seen", "true"),
+		);
+	});
+
 	testWithoutSplashScreen(
 		"should follow the map in the URL without a history entry per move",
 		async ({ page, isMobile }) => {

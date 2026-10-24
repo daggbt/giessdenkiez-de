@@ -155,16 +155,19 @@ export function useMapSetup(
 					promoteId: "id",
 				});
 
-				// Filters from the URL are active from the start.
+				// Filters (from the URL, or picked before a reload of the map) are
+				// active from the start.
 				const {
 					areOnlyAllAdoptedTreesVisible,
 					areLastWateredTreesVisible,
 					treeAgeRange,
+					colorFilter,
 				} = useFilterStore.getState();
 				const filters = {
 					areOnlyAllAdoptedTreesVisible,
 					areLastWateredTreesVisible,
 					treeAgeRange,
+					colorFilter,
 				};
 
 				initializedMap.addLayer({
