@@ -48,7 +48,7 @@ const waitForMapAtRest = (page: Page) =>
 
 /**
  * The ids of the given trees that can be seen: on the map, below the search
- * bar and not behind the legend.
+ * bar and the council buttons, and not behind the legend.
  */
 const treesInView = (page: Page, trees: TreeLocation[]) =>
 	page.evaluate((trees) => {
@@ -64,7 +64,10 @@ const treesInView = (page: Page, trees: TreeLocation[]) =>
 		const legend = document
 			.querySelector('[data-testid="legend"]')!
 			.getBoundingClientRect();
-		const searchBarBottom = 90;
+		const searchBarBottom =
+			document
+				.querySelector('[data-testid="council-picker"]')
+				?.getBoundingClientRect().bottom ?? 90;
 		return trees
 			.filter(({ coordinates }) => {
 				const { x, y } = map.project(coordinates);
@@ -92,7 +95,7 @@ const mapCentre = (page: Page) =>
 	page.evaluate(() =>
 		(
 			window as unknown as {
-				__map: { getCenter: () => { lng: number; lat: number } };
+				__map: { getCenter: () => { toArray: () => [number, number] } };
 			}
 		).__map
 			.getCenter()

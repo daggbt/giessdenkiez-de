@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import type { CouncilId } from "../../src/config/councils";
 import type { TreeFeature } from "../../src/domain/tree-layer";
 
 vi.mock("../../src/auth/supabase-client", () => ({
@@ -21,6 +22,16 @@ const junior: TreeFeature = {
 	},
 };
 
+const fremantleTree: TreeFeature = {
+	...junior,
+	geometry: { type: "Point", coordinates: [115.77, -32.06] },
+	properties: {
+		...junior.properties,
+		id: "fremantle-TRE00001",
+		council: "fremantle",
+	},
+};
+
 const json = (body: unknown) =>
 	new Response(JSON.stringify(body), {
 		headers: { "Content-Type": "application/json" },
@@ -36,22 +47,39 @@ const weather = (rainMm: number) =>
 		},
 	});
 
-/** Answers the trees file at once and Open-Meteo whenever the test says so. */
-function stubFetch() {
+/**
+ * Answers each council's trees file at once, with its trees or an HTTP error
+ * status, and Open-Meteo whenever the test says so.
+ */
+function stubFetch(
+	treesByCouncil: Partial<Record<CouncilId, TreeFeature[] | number>> = {
+		perth: [junior],
+	},
+) {
 	let answerWeather: (response: Response) => void = () => {};
-	vi.stubGlobal(
-		"fetch",
-		vi.fn((input: RequestInfo | URL) =>
-			String(input).includes("open-meteo")
-				? new Promise<Response>((resolve) => {
-						answerWeather = resolve;
-					})
-				: Promise.resolve(
-						json({ type: "FeatureCollection", features: [junior] }),
-					),
-		),
-	);
-	return { answerWeather: (response: Response) => answerWeather(response) };
+	const fetch = vi.fn((input: RequestInfo | URL) => {
+		const url = String(input);
+		if (url.includes("open-meteo")) {
+			return new Promise<Response>((resolve) => {
+				answerWeather = resolve;
+			});
+		}
+		const council = /\/(\w+)\.geojson$/.exec(url)?.[1] as CouncilId;
+		const trees = treesByCouncil[council] ?? [];
+		return Promise.resolve(
+			typeof trees === "number"
+				? new Response("", { status: trees })
+				: json({ type: "FeatureCollection", features: trees }),
+		);
+	});
+	vi.stubGlobal("fetch", fetch);
+	return {
+		answerWeather: (response: Response) => answerWeather(response),
+		fetchesOf: (council: CouncilId) =>
+			fetch.mock.calls.filter(([input]) =>
+				String(input).endsWith(`/${council}.geojson`),
+			).length,
+	};
 }
 
 async function loadStore() {
@@ -59,7 +87,20 @@ async function loadStore() {
 		await import("../../src/components/map/trees-layer-store");
 	const need = () =>
 		useTreesLayerStore.getState().data.features[0]?.properties.need;
-	return { useTreesLayerStore, need };
+	const ids = () =>
+		useTreesLayerStore.getState().data.features.map((f) => f.properties.id);
+	/** Loads councils while the weather does not answer (the store waits 1 s for it). */
+	const loadCouncils = async (councils: CouncilId[]) => {
+		const loading = useTreesLayerStore.getState().loadCouncils(councils);
+		// Caught here, so that a rejection is not unhandled while time passes.
+		const settled = loading.then(
+			() => undefined,
+			(error: unknown) => error,
+		);
+		await vi.advanceTimersByTimeAsync(1000);
+		return settled;
+	};
+	return { useTreesLayerStore, need, ids, loadCouncils };
 }
 
 describe("trees layer store", () => {
@@ -77,11 +118,9 @@ describe("trees layer store", () => {
 
 	test("draws the trees without waiting for slow rain data, then re-colours them", async () => {
 		const { answerWeather } = stubFetch();
-		const { useTreesLayerStore, need } = await loadStore();
+		const { useTreesLayerStore, need, loadCouncils } = await loadStore();
 
-		const loading = useTreesLayerStore.getState().load();
-		await vi.advanceTimersByTimeAsync(1000);
-		await loading;
+		await loadCouncils(["perth"]);
 
 		expect(useTreesLayerStore.getState().status).toBe("ready");
 		expect(need()).toBe("THIRSTY");
@@ -95,10 +134,52 @@ describe("trees layer store", () => {
 		const { answerWeather } = stubFetch();
 		const { useTreesLayerStore, need } = await loadStore();
 
-		const loading = useTreesLayerStore.getState().load();
+		const loading = useTreesLayerStore.getState().loadCouncils(["perth"]);
 		answerWeather(weather(500));
 		await loading;
 
 		expect(need()).toBe("SATISFIED");
+	});
+
+	test("adds a council's trees to those loaded before, fetching each council once", async () => {
+		const { fetchesOf } = stubFetch({
+			perth: [junior],
+			fremantle: [fremantleTree],
+		});
+		const { useTreesLayerStore, ids, loadCouncils } = await loadStore();
+
+		await loadCouncils(["perth"]);
+		expect(ids()).toEqual(["junior"]);
+
+		await Promise.all([
+			useTreesLayerStore.getState().loadCouncils(["fremantle"]),
+			useTreesLayerStore.getState().loadCouncils(["perth", "fremantle"]),
+		]);
+		expect(ids()).toEqual(["junior", "fremantle-TRE00001"]);
+		expect(useTreesLayerStore.getState().councilStatus).toEqual({
+			perth: "ready",
+			fremantle: "ready",
+		});
+		expect(fetchesOf("perth")).toBe(1);
+		expect(fetchesOf("fremantle")).toBe(1);
+	});
+
+	test("draws the councils that arrived when another fails, and tries that one again when asked", async () => {
+		const { fetchesOf } = stubFetch({ perth: [junior], cockburn: 503 });
+		const { useTreesLayerStore, ids, loadCouncils } = await loadStore();
+
+		const error = await loadCouncils(["perth", "cockburn"]);
+
+		expect(String(error)).toContain("cockburn");
+		expect(ids()).toEqual(["junior"]);
+		expect(useTreesLayerStore.getState().councilStatus).toEqual({
+			perth: "ready",
+			cockburn: "error",
+		});
+
+		await expect(
+			useTreesLayerStore.getState().loadCouncils(["cockburn"]),
+		).rejects.toThrow("HTTP 503");
+		expect(fetchesOf("cockburn")).toBe(2);
 	});
 });

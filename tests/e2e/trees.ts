@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import type { CouncilId } from "../../src/config/councils";
+import { CouncilId, councilIds } from "../../src/config/councils";
 import {
 	AgeClass,
 	classifyTreeAge,
@@ -7,13 +7,23 @@ import {
 } from "../../src/domain/tree-age";
 import { TreeProperties } from "../../src/domain/tree-layer";
 
-const collection = JSON.parse(
-	readFileSync("public/data/trees.geojson", "utf-8"),
-) as {
-	features: Array<{
-		geometry: { coordinates: [number, number] };
-		properties: TreeProperties;
-	}>;
+interface TreeFeature {
+	geometry: { coordinates: [number, number] };
+	properties: TreeProperties;
+}
+
+/** The committed trees of a council, `public/data/trees/<council>.geojson`. */
+export function councilTrees(council: CouncilId): TreeFeature[] {
+	return (
+		JSON.parse(
+			readFileSync(`public/data/trees/${council}.geojson`, "utf-8"),
+		) as { features: TreeFeature[] }
+	).features;
+}
+
+// The City of Perth's trees first, where the map starts.
+const collection = {
+	features: councilIds.flatMap(councilTrees),
 };
 
 /** Use with `?now=` to see the app inside the watering season. */
@@ -25,7 +35,7 @@ interface FindTreeOptions {
 	now?: Date;
 	genus?: string;
 	precision?: PlantedDatePrecision;
-	/** Defaults to the City of Perth, whose trees come first in the file. */
+	/** Defaults to the City of Perth, whose trees the map starts with. */
 	council?: CouncilId;
 }
 
@@ -60,7 +70,7 @@ export function findTree(
 		);
 	if (!tree) {
 		throw new Error(
-			`No ${ageClass} tree (${JSON.stringify({ genus, precision, council })}) found in public/data/trees.geojson`,
+			`No ${ageClass} tree (${JSON.stringify({ genus, precision, council })}) found in public/data/trees`,
 		);
 	}
 	return tree;
@@ -117,7 +127,7 @@ export function treeCoordinates(treeId: string): [number, number] {
 		(candidate) => candidate.properties.id === treeId,
 	);
 	if (!feature) {
-		throw new Error(`Tree ${treeId} not found in public/data/trees.geojson`);
+		throw new Error(`Tree ${treeId} not found in public/data/trees`);
 	}
 	return feature.geometry.coordinates;
 }

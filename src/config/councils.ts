@@ -6,6 +6,9 @@ export type CouncilId = "perth" | "fremantle" | "cockburn" | "bassendean";
 /** `[minLng, minLat, maxLng, maxLat]` */
 export type BoundingBox = [number, number, number, number];
 
+/** `[lng, lat]` */
+export type Position = [number, number];
+
 export interface Council {
 	name: string;
 	/** The place, e.g. "Perth" for the City of Perth. */
@@ -23,6 +26,12 @@ export interface Council {
 	};
 	/** Where its trees are, from the import report. */
 	bbox: BoundingBox;
+	/**
+	 * Where picking the council takes the map: for the City of Perth the CBD,
+	 * as the map's default centre in .env.sample, for the others the middle of
+	 * the 500 m square with the most of its trees (October 2026 import).
+	 */
+	centre: Position;
 }
 
 export const councils: Record<CouncilId, Council> = {
@@ -43,6 +52,7 @@ export const councils: Record<CouncilId, Council> = {
 			licence: "CC BY",
 		},
 		bbox: [115.810883, -31.990039, 115.887785, -31.942122],
+		centre: [115.8575, -31.9535],
 	},
 	fremantle: {
 		name: "City of Fremantle",
@@ -59,6 +69,7 @@ export const councils: Record<CouncilId, Council> = {
 			licence: null,
 		},
 		bbox: [115.740032, -32.07953, 115.803365, -32.021577],
+		centre: [115.7677, -32.0574],
 	},
 	cockburn: {
 		name: "City of Cockburn",
@@ -76,6 +87,7 @@ export const councils: Record<CouncilId, Council> = {
 			licence: null,
 		},
 		bbox: [115.753488, -32.18057, 115.914741, -32.073752],
+		centre: [115.8124, -32.1275],
 	},
 	bassendean: {
 		name: "Town of Bassendean",
@@ -94,6 +106,7 @@ export const councils: Record<CouncilId, Council> = {
 			licence: null,
 		},
 		bbox: [115.926816, -31.924408, 115.962563, -31.887474],
+		centre: [115.9524, -31.9025],
 	},
 };
 
@@ -127,6 +140,32 @@ export const mapAreaBbox: BoundingBox = (() => {
 		maxLat + latPadding,
 	];
 })();
+
+/** The councils whose trees' area overlaps `bbox`, e.g. the part of the map in view. */
+export const councilsOverlapping = ([west, south, east, north]: BoundingBox) =>
+	councilIds.filter((id) => {
+		const [minLng, minLat, maxLng, maxLat] = councils[id].bbox;
+		return (
+			minLng <= east && maxLng >= west && minLat <= north && maxLat >= south
+		);
+	});
+
+/**
+ * The council whose trees' area `position` is in; where two areas overlap, the
+ * one with the nearer centre.
+ */
+export function councilAt([lng, lat]: Position): CouncilId | undefined {
+	const distance = (id: CouncilId) => {
+		const [centreLng, centreLat] = councils[id].centre;
+		return Math.hypot(
+			(lng - centreLng) * Math.cos((lat * Math.PI) / 180),
+			lat - centreLat,
+		);
+	};
+	return councilsOverlapping([lng, lat, lng, lat]).sort(
+		(a, b) => distance(a) - distance(b),
+	)[0];
+}
 
 /** "A, B and C" */
 export const formatList = (items: string[]) =>

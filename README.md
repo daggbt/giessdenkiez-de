@@ -2,6 +2,8 @@
 
 A prototype web app that helps residents water young street trees in Perth (Western Australia). It shows the public tree inventories of the **City of Perth**, the **City of Fremantle**, the **City of Cockburn** and the **Town of Bassendean** on a map, coloured by water need. Residents can log waterings and adopt trees.
 
+The map opens on the City of Perth with its trees only. The council buttons under the search bar move the map to another council and load its trees; moving the map or searching into a council's area loads them too.
+
 > Status: prototype. The working plan lives in [docs/perth-prototype-roadmap.md](./docs/perth-prototype-roadmap.md).
 
 ## Run locally
@@ -40,14 +42,14 @@ Scripts:
 ## Refresh the tree data
 
 ```bash
-npm run import:trees         # writes public/data/trees.geojson and supabase/seed.sql
-git add public/data/trees.geojson supabase/seed.sql && git commit
+npm run import:trees         # writes public/data/trees/<council>.geojson and supabase/seed.sql
+git add public/data/trees supabase/seed.sql && git commit
 SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... npm run import:trees -- --push   # upserts into the hosted database
 ```
 
 Then redeploy so the new GeoJSON is served. The service-role key is only ever read from the environment by this script; never give it a `VITE_` prefix.
 
-The import fetches each council's ArcGIS layer in turn (`scripts/import-trees/sources.ts` maps their fields) and fails as a whole if one is unreachable. Each council's name, links, how long it waters new trees and the area of its trees live in `src/config/councils.ts`. The import warns when trees fall outside that area, because the map cannot be moved beyond it. Tree ids of the City of Perth are its own asset ids, as before; the other councils' ids carry a prefix, e.g. `fremantle-TRE03987`.
+The import fetches each council's ArcGIS layer in turn (`scripts/import-trees/sources.ts` maps their fields) and fails as a whole if one is unreachable. It writes one GeoJSON file per council, which the map loads when it gets to that council. Each council's name, links, how long it waters new trees, the area of its trees and where its button takes the map live in `src/config/councils.ts`. The import warns when trees fall outside that area, because the map cannot be moved beyond it. Tree ids of the City of Perth are its own asset ids, as before; the other councils' ids carry a prefix, e.g. `fremantle-TRE03987`.
 
 To add another council: add its layer and field mapping to `sources.ts`, its entry to `councils.ts`, and its id to the `trees_council_check` constraint in a new migration.
 

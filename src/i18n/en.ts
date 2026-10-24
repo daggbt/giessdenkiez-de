@@ -74,9 +74,15 @@ export const en: Content = {
 			failed:
 				"The map could not be loaded. Please check your connection and reload the page.",
 		},
+		treesFailed: (names) =>
+			`The trees of ${formatList(names.map((name) => `the ${name}`))} could not be loaded. Please check your connection and try again.`,
 	},
 	locationSearch: {
 		placeholder: "Search for an address",
+	},
+	councilPicker: {
+		label: "Go to a council's trees",
+		loading: (councilName) => `Loading the trees of the ${councilName}…`,
 	},
 	legend: {
 		title: "Legend",

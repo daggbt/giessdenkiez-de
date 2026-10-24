@@ -11,8 +11,8 @@ import { useTreeStore } from "../tree-detail/stores/tree-store";
 /** Why a colour picked in the legend has no trees to show. */
 export type NoTreesReason = "offSeason" | "filters" | "none";
 
-// Room for the search bar at the top of the map.
-const SEARCH_BAR_SPACE = 90;
+// Room for the search bar and the council buttons at the top of the map.
+const SEARCH_BAR_SPACE = 140;
 const MARGIN = 40;
 // On large screens the tree panel covers the right of the map (see tree-detail.tsx).
 const LARGE_SCREEN_MIN_WIDTH = 1024;
@@ -156,7 +156,7 @@ function bringIntoView(
 }
 
 /**
- * Keeps the trees below the search bar, clear of an open tree panel, and
+ * Keeps the trees below the search bar and the council buttons, clear of an open tree panel, and
  * beside or above the legend, whichever leaves more of the map.
  */
 function framePadding(

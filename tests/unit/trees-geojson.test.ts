@@ -13,11 +13,19 @@ import {
 	TreeFeature,
 } from "../../src/domain/tree-layer";
 
-// Checks the committed data file against what the app expects of it.
-const collection = JSON.parse(
-	readFileSync("public/data/trees.geojson", "utf-8"),
-) as { features: TreeFeature[] };
-const features = collection.features;
+// Checks the committed data files, one per council, against what the app
+// expects of them.
+const featuresByCouncil = Object.fromEntries(
+	councilIds.map((council) => [
+		council,
+		(
+			JSON.parse(
+				readFileSync(`public/data/trees/${council}.geojson`, "utf-8"),
+			) as { features: TreeFeature[] }
+		).features,
+	]),
+) as Record<CouncilId, TreeFeature[]>;
+const features = councilIds.flatMap((council) => featuresByCouncil[council]);
 
 const enrich = (now: string) =>
 	enrichFeatures(features, {
@@ -34,16 +42,18 @@ const MIN_TREES: Record<CouncilId, number> = {
 	bassendean: 10_000,
 };
 
-describe("public/data/trees.geojson", () => {
-	test("has every council's trees with unique ids", () => {
+describe("public/data/trees", () => {
+	test("has a file of each council's trees, with unique ids", () => {
 		for (const council of councilIds) {
+			expect(featuresByCouncil[council].length).toBeGreaterThan(
+				MIN_TREES[council],
+			);
 			expect(
-				features.filter((f) => f.properties.council === council).length,
-			).toBeGreaterThan(MIN_TREES[council]);
+				featuresByCouncil[council].every(
+					(f) => f.properties.council === council,
+				),
+			).toBe(true);
 		}
-		expect(
-			features.every((f) => councilIds.includes(f.properties.council)),
-		).toBe(true);
 		expect(new Set(features.map((f) => f.properties.id)).size).toBe(
 			features.length,
 		);

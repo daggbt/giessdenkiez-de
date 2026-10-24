@@ -1,11 +1,13 @@
 import { createClient } from "@supabase/supabase-js";
 import { mkdirSync, writeFileSync } from "node:fs";
-import { dirname } from "node:path";
+import { dirname, join } from "node:path";
+import type { CouncilId } from "../../src/config/councils";
 import type { ImportReport, TreeRecord } from "./normalise";
 
-// About 32 MB for the four councils' 130,000 trees. Vercel serves it
-// compressed, under 2 MB, but browsers still parse all of it.
-export const MAX_GEOJSON_BYTES = 40 * 1024 * 1024;
+// Per council's file. The City of Cockburn's 76,000 trees are about 19 MB,
+// which Vercel serves compressed at about 1 MB, but browsers still parse all
+// of it.
+export const MAX_GEOJSON_BYTES = 25 * 1024 * 1024;
 const SEED_BATCH_SIZE = 1000;
 const PUSH_BATCH_SIZE = 500;
 
@@ -34,17 +36,30 @@ export function buildGeoJson(records: TreeRecord[]): string {
 	return `{"type":"FeatureCollection","features":[\n${features.join(",\n")}\n]}\n`;
 }
 
-export function writeGeoJson(records: TreeRecord[], file: string): number {
-	const content = buildGeoJson(records);
-	const bytes = Buffer.byteLength(content);
-	if (bytes > MAX_GEOJSON_BYTES) {
-		throw new Error(
-			`${file} would be ${(bytes / 1024 / 1024).toFixed(1)} MB, above the ${MAX_GEOJSON_BYTES / 1024 / 1024} MB limit.`,
-		);
+/**
+ * Writes `<dir>/<council>.geojson` for each council: the map loads a council's
+ * trees when it gets there. Checks every file's size before writing any.
+ */
+export function writeCouncilGeoJson(
+	recordsByCouncil: Array<[CouncilId, TreeRecord[]]>,
+	dir: string,
+): Array<{ file: string; bytes: number }> {
+	const files = recordsByCouncil.map(([council, records]) => {
+		const file = join(dir, `${council}.geojson`);
+		const content = buildGeoJson(records);
+		const bytes = Buffer.byteLength(content);
+		if (bytes > MAX_GEOJSON_BYTES) {
+			throw new Error(
+				`${file} would be ${(bytes / 1024 / 1024).toFixed(1)} MB, above the ${MAX_GEOJSON_BYTES / 1024 / 1024} MB limit.`,
+			);
+		}
+		return { file, content, bytes };
+	});
+	mkdirSync(dir, { recursive: true });
+	for (const { file, content } of files) {
+		writeFileSync(file, content);
 	}
-	ensureDir(file);
-	writeFileSync(file, content);
-	return bytes;
+	return files.map(({ file, bytes }) => ({ file, bytes }));
 }
 
 const COLUMNS = [

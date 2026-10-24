@@ -14,6 +14,7 @@ import { Splash } from "../splash/splash";
 import { useMapStore } from "../map/map-store";
 import { useSplashStore } from "../splash/splash-store";
 import { Legend } from "../legend/legend";
+import { CouncilPicker } from "../council-picker/council-picker";
 
 export const Router: React.FC = () => {
 	const url = useUrlState((state) => state.url);
@@ -73,8 +74,11 @@ export const Router: React.FC = () => {
 									treeId ? "w-[100%] sm:w-[400px]" : "w-[100%] sm:w-[500px]"
 								} flex flex-col gap-4`}
 							>
-								<div className={`${treeId && "hidden lg:flex"}`}>
+								<div
+									className={`${treeId ? "hidden lg:flex" : "flex"} flex-col gap-2`}
+								>
 									<LocationSearch />
+									<CouncilPicker />
 								</div>
 
 								<div

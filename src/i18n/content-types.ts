@@ -11,6 +11,13 @@ interface LocationSearch {
 	placeholder: string;
 }
 
+interface CouncilPicker {
+	/** For screen readers: what the council buttons are. */
+	label: string;
+	/** For screen readers, while a council's trees load. */
+	loading: (councilName: string) => string;
+}
+
 interface Legend {
 	title: string;
 	greenTrees: string;
@@ -340,8 +347,11 @@ export interface Content {
 			unsupported: string;
 			failed: string;
 		};
+		/** The councils' names, e.g. ["City of Cockburn"]. */
+		treesFailed: (councilNames: string[]) => string;
 	};
 	locationSearch: LocationSearch;
+	councilPicker: CouncilPicker;
 	legend: Legend;
 	navbar: Navbar;
 	notFound: NotFound;

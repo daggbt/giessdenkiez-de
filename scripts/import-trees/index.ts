@@ -1,11 +1,11 @@
 import { parseArgs } from "node:util";
-import { councils } from "../../src/config/councils";
+import { CouncilId, councils } from "../../src/config/councils";
 import { fetchAllFeatures } from "./fetch";
 import { ImportReport, normaliseAll, TreeRecord } from "./normalise";
 import {
 	printSummary,
 	pushToSupabase,
-	writeGeoJson,
+	writeCouncilGeoJson,
 	writeReport,
 	writeSeedSql,
 } from "./outputs";
@@ -13,7 +13,7 @@ import { sources } from "./sources";
 
 const { values } = parseArgs({
 	options: {
-		"out-geojson": { type: "string", default: "public/data/trees.geojson" },
+		"out-trees": { type: "string", default: "public/data/trees" },
 		"out-seed": { type: "string", default: "supabase/seed.sql" },
 		push: { type: "boolean", default: false },
 		"dry-run": { type: "boolean", default: false },
@@ -34,7 +34,7 @@ async function main() {
 
 	// One after the other: all councils or none, so a failed download leaves the
 	// committed files as they were.
-	const records: TreeRecord[] = [];
+	const recordsByCouncil: Array<[CouncilId, TreeRecord[]]> = [];
 	const reports: ImportReport[] = [];
 	for (const source of sources) {
 		console.log(
@@ -46,19 +46,25 @@ async function main() {
 		);
 		const result = normaliseAll(source, features);
 		printSummary(result.report);
-		records.push(...result.records);
+		recordsByCouncil.push([source.council, result.records]);
 		reports.push(result.report);
 	}
+	const records = recordsByCouncil.flatMap(
+		([, councilRecords]) => councilRecords,
+	);
 
 	if (dryRun) {
 		console.log("\nDry run: no files written, nothing pushed.");
 		return;
 	}
 
-	const bytes = writeGeoJson(records, values["out-geojson"]);
-	console.log(
-		`\nWrote ${values["out-geojson"]} (${(bytes / 1024 / 1024).toFixed(2)} MB)`,
-	);
+	console.log("");
+	for (const { file, bytes } of writeCouncilGeoJson(
+		recordsByCouncil,
+		values["out-trees"],
+	)) {
+		console.log(`Wrote ${file} (${(bytes / 1024 / 1024).toFixed(2)} MB)`);
+	}
 	writeSeedSql(records, values["out-seed"]);
 	console.log(`Wrote ${values["out-seed"]}`);
 	writeReport(reports, "data/import-report.json");

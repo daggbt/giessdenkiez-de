@@ -12,7 +12,7 @@ import {
 import type { AgeClass } from "./tree-age";
 import { getNeedStatus, NeedStatus } from "./tree-status";
 
-/** Properties of a feature in public/data/trees.geojson. */
+/** Properties of a feature in public/data/trees/<council>.geojson. */
 export interface TreeProperties {
 	id: string;
 	council: CouncilId;

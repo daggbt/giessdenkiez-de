@@ -8,9 +8,9 @@ import { useMapInteraction } from "./use-map-interaction";
 import { useTreesLayerStore } from "../trees-layer-store";
 import { toMapData } from "../../../domain/tree-layer";
 import { useFilterStore } from "../../filter/filter-store";
-import { useErrorStore } from "../../../error/error-store";
-import { useI18nStore } from "../../../i18n/i18n-store";
-import { mapAreaBbox } from "../../../config/councils";
+import { councilsOverlapping, mapAreaBbox } from "../../../config/councils";
+import { boundsInView, useCouncilsInView } from "./use-councils-in-view";
+import { reportFailedCouncils } from "../report-failed-councils";
 
 export function useMapSetup(
 	mapContainer: React.MutableRefObject<HTMLDivElement | null>,
@@ -26,6 +26,7 @@ export function useMapSetup(
 
 	useMapTreesInteraction(map);
 	useMapInteraction(map);
+	useCouncilsInView(map);
 
 	const {
 		circleRadius,
@@ -109,26 +110,19 @@ export function useMapSetup(
 				hasLoaded = true;
 				setMapError(undefined);
 
-				let hasTrees = true;
+				// The trees of the councils in view; others load when the map gets
+				// to them (useCouncilsInView).
 				try {
-					await useTreesLayerStore.getState().load();
-				} catch (error) {
-					// Show the base map anyway, the toast explains what is missing.
-					useErrorStore
+					await useTreesLayerStore
 						.getState()
-						.handleError(
-							useI18nStore.getState().i18n().common.defaultErrorMessage,
-							error,
-						);
-					hasTrees = false;
+						.loadCouncils(councilsOverlapping(boundsInView(initializedMap)));
+				} catch (error) {
+					// Show the map anyway, the toast explains what is missing.
+					reportFailedCouncils(error);
 				}
 
 				// The map may have been removed while the trees were loading.
 				if (isRemoved) {
-					return;
-				}
-				if (!hasTrees) {
-					setIsMapLoaded(true);
 					return;
 				}
 

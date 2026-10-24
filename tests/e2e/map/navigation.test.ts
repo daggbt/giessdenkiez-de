@@ -8,6 +8,27 @@ testWithoutSplashScreen.use({ mapMode: "stubbed" });
 const waitForTrees = (page: Page) =>
 	expect(page.getByTestId("map")).not.toHaveAttribute("data-tree-count", "0");
 
+/**
+ * Waits until the map has drawn its first trees and stopped. With software
+ * WebGL that drawing holds up the page, long enough to look like a pause in
+ * typing.
+ */
+const waitForMapAtRest = (page: Page) =>
+	page.waitForFunction(() => {
+		const map = (
+			window as unknown as {
+				__map?: {
+					getLayer: (id: string) => unknown;
+					loaded: () => boolean;
+					isMoving: () => boolean;
+				};
+			}
+		).__map;
+		return (
+			map?.getLayer("trees") !== undefined && map.loaded() && !map.isMoving()
+		);
+	});
+
 /** Waits until the map draws a tree right in its centre, so a click there hits it. */
 const waitForTreeAtCentre = (page: Page) =>
 	page.waitForFunction(() => {
@@ -173,6 +194,7 @@ testWithoutSplashScreen.describe("Address search", () => {
 
 			await page.goto("/map");
 			await waitForTrees(page);
+			await waitForMapAtRest(page);
 
 			const search = page.getByPlaceholder("Search for an address");
 			await search.pressSequentially("Hay St", { delay: 50 });

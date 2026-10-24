@@ -1,6 +1,7 @@
 import type { GeoJSONSource } from "mapbox-gl";
 import { create } from "zustand";
 import { supabaseClient } from "../../auth/supabase-client";
+import { CouncilId, councilIds } from "../../config/councils";
 import { getNow } from "../../domain/time";
 import {
 	ActivityById,
@@ -15,22 +16,29 @@ import { useWeatherStore } from "../../weather/weather-store";
 import { useMapStore } from "./map-store";
 import type { FeatureCollection, Point } from "geojson";
 
-export type TreesLayerStatus = "idle" | "loading" | "ready" | "error";
+export type TreesLayerStatus = "idle" | "loading" | "ready";
+
+/** Whether a council's trees are being fetched, are on the map, or failed to load. */
+export type CouncilTreesStatus = "loading" | "ready" | "error";
 
 interface TreesLayerStore {
 	status: TreesLayerStatus;
-	/** The enriched features, as shown on the map. */
+	/** The enriched features of the councils loaded so far, as shown on the map. */
 	data: FeatureCollection<Point, EnrichedTreeProperties>;
 	activityById: ActivityById;
 	treeCount: number;
 	/** Number of trees per age bucket 0 to 10 (for the age filter). */
 	ageHistogram: number[];
+	/** Councils without an entry have not been loaded or asked for. */
+	councilStatus: Partial<Record<CouncilId, CouncilTreesStatus>>;
 	/**
-	 * Loads trees, activity and weather once; later calls reuse the result. The
-	 * trees do not wait long for the weather: when it comes late they are
-	 * re-coloured.
+	 * Loads the trees of these councils and draws them with the ones loaded
+	 * before; the first call also loads the activity and the weather. The trees
+	 * do not wait long for the weather: when it comes late they are re-coloured.
+	 * When a council's trees cannot be fetched, the others are drawn and the
+	 * promise rejects; asking for that council again tries again.
 	 */
-	load: () => Promise<void>;
+	loadCouncils: (ids: CouncilId[]) => Promise<void>;
 	/** Re-fetches the activity, re-enriches and updates the map source. */
 	refresh: () => Promise<void>;
 }
@@ -55,16 +63,30 @@ const emptyData: FeatureCollection<Point, EnrichedTreeProperties> = {
  */
 const WEATHER_WAIT_MS = 1000;
 
-let baseFeatures: TreeFeature[] = [];
-let loadPromise: Promise<void> | undefined;
+/** One GeoJSON file per council, written by `npm run import:trees`. */
+const TREES_DATA_URL = import.meta.env.VITE_TREES_DATA_URL || "/data/trees";
+
+/** The trees of each council fetched so far; the map shows all of them. */
+const featuresByCouncil: Partial<Record<CouncilId, TreeFeature[]>> = {};
+/** Fetches under way or done, so that no council's trees are fetched twice. */
+const councilFetches = new Map<CouncilId, Promise<void>>();
+/** The activity, and the wait for the weather: once for all councils. */
+let sharedDataPromise: Promise<void> | undefined;
+
+const loadedFeatures = () =>
+	councilIds.flatMap((id) => featuresByCouncil[id] ?? []);
 
 const wait = (ms: number) =>
 	new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-async function fetchBaseFeatures(): Promise<TreeFeature[]> {
-	const response = await fetch(import.meta.env.VITE_TREES_GEOJSON_URL);
+async function fetchCouncilFeatures(
+	council: CouncilId,
+): Promise<TreeFeature[]> {
+	const response = await fetch(`${TREES_DATA_URL}/${council}.geojson`);
 	if (!response.ok) {
-		throw new Error(`Failed to load trees: HTTP ${response.status}`);
+		throw new Error(
+			`Failed to load the trees of ${council}: HTTP ${response.status}`,
+		);
 	}
 	const collection = (await response.json()) as FeatureCollection<
 		Point,
@@ -100,7 +122,7 @@ async function fetchActivity(): Promise<ActivityById | undefined> {
 }
 
 function enrich(activityById: ActivityById) {
-	const features = enrichFeatures(baseFeatures, {
+	const features = enrichFeatures(loadedFeatures(), {
 		activityById,
 		rain30dMm: useWeatherStore.getState().rain30dMm,
 		now: getNow(),
@@ -123,40 +145,85 @@ export const useTreesLayerStore = create<TreesLayerStore>()((set, get) => {
 		source?.setData(toMapData(get().data.features));
 	};
 
+	const setCouncilStatus = (council: CouncilId, status: CouncilTreesStatus) =>
+		set({ councilStatus: { ...get().councilStatus, [council]: status } });
+
+	const loadSharedData = () => {
+		sharedDataPromise ??= (async () => {
+			const weather = useWeatherStore.getState().load();
+			const [activityById] = await Promise.all([
+				fetchActivity(),
+				Promise.race([weather, wait(WEATHER_WAIT_MS)]),
+			]);
+			set({ activityById: activityById ?? {} });
+
+			if (useWeatherStore.getState().status === "loading") {
+				weather.then(() => {
+					if (useWeatherStore.getState().status === "ready") {
+						update(get().activityById);
+					}
+				});
+			}
+		})();
+		return sharedDataPromise;
+	};
+
+	const fetchCouncil = (council: CouncilId): Promise<void> => {
+		const fetching =
+			councilFetches.get(council) ??
+			(async () => {
+				setCouncilStatus(council, "loading");
+				try {
+					featuresByCouncil[council] = await fetchCouncilFeatures(council);
+				} catch (error) {
+					// The next call fetches it again.
+					councilFetches.delete(council);
+					setCouncilStatus(council, "error");
+					throw error;
+				}
+			})();
+		councilFetches.set(council, fetching);
+		return fetching;
+	};
+
 	return {
 		status: "idle",
 		data: emptyData,
 		activityById: {},
 		treeCount: 0,
 		ageHistogram: [],
+		councilStatus: {},
 
-		load: () => {
-			loadPromise ??= (async () => {
+		loadCouncils: async (ids) => {
+			const missing = ids.filter((id) => !featuresByCouncil[id]);
+			if (missing.length === 0 && get().status === "ready") {
+				return;
+			}
+			if (get().status === "idle") {
 				set({ status: "loading" });
-				const weather = useWeatherStore.getState().load();
-				try {
-					const [features, activityById] = await Promise.all([
-						fetchBaseFeatures(),
-						fetchActivity(),
-						Promise.race([weather, wait(WEATHER_WAIT_MS)]),
-					]);
-					baseFeatures = features;
-					set({ ...enrich(activityById ?? {}), status: "ready" });
-				} catch (error) {
-					loadPromise = undefined;
-					set({ status: "error" });
-					throw error;
-				}
+			}
+			// Settled from the start, so that a failure while the weather is
+			// awaited is not an unhandled rejection.
+			const fetches = Promise.allSettled(missing.map(fetchCouncil));
+			await loadSharedData();
+			const results = await fetches;
 
-				if (useWeatherStore.getState().status === "loading") {
-					weather.then(() => {
-						if (useWeatherStore.getState().status === "ready") {
-							update(get().activityById);
-						}
-					});
+			// Draws the councils that arrived, also when another one failed.
+			update(get().activityById);
+			for (const id of missing) {
+				if (featuresByCouncil[id]) {
+					setCouncilStatus(id, "ready");
 				}
-			})();
-			return loadPromise;
+			}
+			set({ status: "ready" });
+
+			const failure = results.find(
+				(result): result is PromiseRejectedResult =>
+					result.status === "rejected",
+			);
+			if (failure) {
+				throw failure.reason;
+			}
 		},
 
 		refresh: async () => {

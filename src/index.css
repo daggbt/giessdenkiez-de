@@ -120,3 +120,12 @@
 .slider-thumb-right::-webkit-slider-thumb {
 	@apply translate-x-[12.5px];
 }
+
+/* Scrolls sideways without a scroll bar, like the council buttons on small phones. */
+.no-scrollbar {
+	scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+	display: none;
+}

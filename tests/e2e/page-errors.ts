@@ -21,6 +21,9 @@ const ignoredMessages = [
 	// error-handling tests, and the 4xx responses those tests provoke on purpose.
 	/Failed to load resource/i,
 	/due to access control checks/i,
+	// A council's trees file failing, which the map tests provoke on purpose
+	// (the app says so in a message).
+	/Failed to load the trees of \w+: HTTP \d+/,
 	// WebKit reports aborted requests without a usable message
 	/undefined undefined/,
 	/uncaught: (\[object Object\]|Object)$/,

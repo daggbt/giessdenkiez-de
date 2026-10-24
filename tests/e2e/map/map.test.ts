@@ -1,10 +1,13 @@
-import { expect } from "@playwright/test";
+import { expect, Page } from "@playwright/test";
+import { councils } from "../../../src/config/councils";
 import { testWithoutSplashScreen } from "../fixtures/test-without-splash-screen";
 import {
+	councilTrees,
 	edgeTrees,
 	findTree,
 	IN_SEASON_DATE,
 	IN_SEASON_NOW,
+	metresBetween,
 	readTreeState,
 } from "../trees";
 import { OPEN_METEO_URL } from "../weather";
@@ -12,38 +15,152 @@ import { OPEN_METEO_URL } from "../weather";
 // The style is served locally, so the map "loads" without a Mapbox request.
 testWithoutSplashScreen.use({ mapMode: "stubbed" });
 
+const treeCount = async (page: Page) =>
+	Number(await page.getByTestId("map").getAttribute("data-tree-count"));
+
+/** The councils whose trees are on the map, in the order of councils.ts. */
+const loadedCouncils = (page: Page) =>
+	page.evaluate(() => {
+		const store = (
+			window as unknown as {
+				__treesLayer: {
+					getState: () => {
+						data: {
+							features: Array<{ properties: { council: string } }>;
+						};
+					};
+				};
+			}
+		).__treesLayer.getState();
+		return [...new Set(store.data.features.map((f) => f.properties.council))];
+	});
+
+const mapCentre = (page: Page) =>
+	page.evaluate(
+		() =>
+			(
+				window as unknown as {
+					__map: { getCenter: () => { toArray: () => [number, number] } };
+				}
+			).__map
+				.getCenter()
+				.toArray() as [number, number],
+	);
+
+const councilButton = (page: Page, name: string) =>
+	page.getByTestId("council-picker").getByRole("button", { name, exact: true });
+
 testWithoutSplashScreen.describe("Map", () => {
 	testWithoutSplashScreen(
-		"should load the trees of every council",
+		"should start with the City of Perth's trees only",
 		async ({ page }) => {
 			await page.goto("/map");
 
-			const map = page.getByTestId("map");
 			await expect
-				.poll(async () => Number(await map.getAttribute("data-tree-count")), {
-					timeout: 20_000,
-				})
-				.toBeGreaterThanOrEqual(125_000);
-
-			const councils = await page.evaluate(() => {
-				const store = (
-					window as unknown as {
-						__treesLayer: {
-							getState: () => {
-								data: {
-									features: Array<{ properties: { council: string } }>;
-								};
-							};
-						};
-					}
-				).__treesLayer.getState();
-				return [
-					...new Set(store.data.features.map((f) => f.properties.council)),
-				];
-			});
-			expect(councils.sort()).toEqual(
-				["bassendean", "cockburn", "fremantle", "perth"].sort(),
+				.poll(() => treeCount(page), { timeout: 20_000 })
+				.toBe(councilTrees("perth").length);
+			expect(await loadedCouncils(page)).toEqual(["perth"]);
+			await expect(councilButton(page, "Perth")).toHaveAttribute(
+				"aria-pressed",
+				"true",
 			);
+		},
+	);
+
+	testWithoutSplashScreen(
+		"should go to a council and load its trees when it is picked",
+		async ({ page }) => {
+			await page.goto("/map");
+			await expect
+				.poll(() => treeCount(page), { timeout: 20_000 })
+				.toBe(councilTrees("perth").length);
+
+			await councilButton(page, "Fremantle").click();
+
+			await expect(councilButton(page, "Fremantle")).toHaveAttribute(
+				"aria-pressed",
+				"true",
+			);
+			await expect(councilButton(page, "Perth")).toHaveAttribute(
+				"aria-pressed",
+				"false",
+			);
+			await expect
+				.poll(() => loadedCouncils(page), { timeout: 20_000 })
+				.toEqual(["perth", "fremantle"]);
+			await expect
+				.poll(async () =>
+					metresBetween(await mapCentre(page), councils.fremantle.centre),
+				)
+				.toBeLessThan(10);
+		},
+	);
+
+	testWithoutSplashScreen(
+		"should load a council's trees when the map is moved there",
+		async ({ page }) => {
+			await page.goto("/map");
+			await expect
+				.poll(() => treeCount(page), { timeout: 20_000 })
+				.toBe(councilTrees("perth").length);
+
+			await page.evaluate((centre) => {
+				(
+					window as unknown as {
+						__map: { jumpTo: (options: { center: [number, number] }) => void };
+					}
+				).__map.jumpTo({ center: centre });
+			}, councils.bassendean.centre);
+
+			await expect
+				.poll(() => loadedCouncils(page), { timeout: 20_000 })
+				.toEqual(["perth", "bassendean"]);
+			await expect(councilButton(page, "Bassendean")).toHaveAttribute(
+				"aria-pressed",
+				"true",
+			);
+		},
+	);
+
+	testWithoutSplashScreen(
+		"should start with the trees of the council a link points at",
+		async ({ page }) => {
+			const [lng, lat] = councils.fremantle.centre;
+			await page.goto(`/map?lat=${lat}&lng=${lng}&zoom=15`);
+
+			await expect
+				.poll(() => treeCount(page), { timeout: 20_000 })
+				.toBe(councilTrees("fremantle").length);
+			expect(await loadedCouncils(page)).toEqual(["fremantle"]);
+		},
+	);
+
+	testWithoutSplashScreen(
+		"should say when a council's trees cannot be loaded, and try again when it is picked",
+		async ({ page }) => {
+			const bassendeanTrees = "**/data/trees/bassendean.geojson";
+			await page.route(bassendeanTrees, (route) =>
+				route.fulfill({ status: 503 }),
+			);
+			await page.goto("/map");
+			await expect
+				.poll(() => treeCount(page), { timeout: 20_000 })
+				.toBe(councilTrees("perth").length);
+
+			await councilButton(page, "Bassendean").click();
+
+			await expect(
+				page.getByText(
+					"The trees of the Town of Bassendean could not be loaded. Please check your connection and try again.",
+				),
+			).toBeVisible();
+			expect(await loadedCouncils(page)).toEqual(["perth"]);
+
+			await page.unroute(bassendeanTrees);
+			await councilButton(page, "Bassendean").click();
+			await expect
+				.poll(() => loadedCouncils(page), { timeout: 20_000 })
+				.toEqual(["perth", "bassendean"]);
 		},
 	);
 
