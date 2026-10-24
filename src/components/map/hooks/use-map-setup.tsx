@@ -6,28 +6,11 @@ import { useMapConstants } from "./use-map-constants";
 import { useMapTreesInteraction } from "./use-map-trees-interaction";
 import { useMapInteraction } from "./use-map-interaction";
 import { useTreesLayerStore } from "../trees-layer-store";
+import { toMapData } from "../../../domain/tree-layer";
 import { useFilterStore } from "../../filter/filter-store";
 import { useErrorStore } from "../../../error/error-store";
 import { useI18nStore } from "../../../i18n/i18n-store";
-
-const BOUNDS_PADDING = 0.1;
-
-/** The bounding box from the environment, padded by 10 % so edge trees are reachable. */
-function getMaxBounds(): mapboxgl.LngLatBoundsLike | undefined {
-	const box = (import.meta.env.VITE_MAP_BOUNDING_BOX ?? "")
-		.split(",")
-		.map(Number);
-	if (box.length !== 4 || box.some(Number.isNaN)) {
-		return undefined;
-	}
-	const [minLng, minLat, maxLng, maxLat] = box;
-	const lngPadding = (maxLng - minLng) * BOUNDS_PADDING;
-	const latPadding = (maxLat - minLat) * BOUNDS_PADDING;
-	return [
-		[minLng - lngPadding, minLat - latPadding],
-		[maxLng + lngPadding, maxLat + latPadding],
-	];
-}
+import { mapAreaBbox } from "../../../config/councils";
 
 export function useMapSetup(
 	mapContainer: React.MutableRefObject<HTMLDivElement | null>,
@@ -96,7 +79,7 @@ export function useMapSetup(
 					zoom,
 					minZoom: MAP_MIN_ZOOM_LEVEL,
 					maxZoom: MAP_MAX_ZOOM_LEVEL,
-					maxBounds: getMaxBounds(),
+					maxBounds: mapAreaBbox,
 					pitch: isMobile ? 0 : MAP_PITCH_DEGREES,
 					testMode,
 				});
@@ -151,8 +134,14 @@ export function useMapSetup(
 
 				initializedMap.addSource("trees", {
 					type: "geojson",
-					data: useTreesLayerStore.getState().data,
+					data: toMapData(useTreesLayerStore.getState().data.features),
 					promoteId: "id",
+					// Not for clusters: the map never zooms out that far. A clustered
+					// source indexes points with Supercluster, which for 130,000 trees
+					// needs a fraction of the memory of the default index (geojson-vt
+					// keeps copies of the points for every zoom level it tiles).
+					cluster: true,
+					clusterMaxZoom: 8,
 				});
 
 				// Filters (from the URL, or picked before a reload of the map) are
@@ -174,6 +163,8 @@ export function useMapSetup(
 					id: "trees",
 					type: "circle",
 					source: "trees",
+					// Clusters exist only below the minimum zoom; never draw one as a tree.
+					filter: ["!", ["has", "point_count"]],
 					layout: {
 						"circle-sort-key": circleSortKey(filters),
 					},

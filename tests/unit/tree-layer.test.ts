@@ -13,11 +13,13 @@ const tree = (
 	id: string,
 	planted_date: string | null,
 	planted_date_precision: TreeFeature["properties"]["planted_date_precision"],
+	council: TreeFeature["properties"]["council"] = "perth",
 ): TreeFeature => ({
 	type: "Feature",
 	geometry: { type: "Point", coordinates: [115.86, -31.95] },
 	properties: {
 		id,
+		council,
 		genus: "Platanus",
 		common_name: "London Plane",
 		planted_date,
@@ -59,6 +61,23 @@ describe("enrichFeatures", () => {
 			age_bucket: -1,
 			age_class: "UNKNOWN",
 			need: "UNKNOWN_AGE",
+		});
+	});
+
+	test("judges each tree by how long its council waters new trees", () => {
+		// 2.5 years old: Perth waters for 2 years, Cockburn for 3
+		const [perth, cockburn] = enrichFeatures(
+			[
+				tree("perth", "2024-07-15", "day", "perth"),
+				tree("cockburn", "2024-07-15", "day", "cockburn"),
+			],
+			{ activityById: {}, rain30dMm: 0, now: inSeason },
+		).map((f) => f.properties);
+
+		expect(perth).toMatchObject({ age_class: "JUNIOR", need: "THIRSTY" });
+		expect(cockburn).toMatchObject({
+			age_class: "BABY",
+			need: "COUNCIL_CARE",
 		});
 	});
 

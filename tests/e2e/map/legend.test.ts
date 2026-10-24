@@ -190,13 +190,14 @@ testWithoutSplashScreen.describe("Map legend", () => {
 			// With the trees in view, though not in the middle, picking the colour
 			// again leaves the map where it is.
 			await watered.click();
-			await page.evaluate(() =>
+			// Braces: panBy returns the map, which Playwright would copy out of the page.
+			await page.evaluate(() => {
 				(
 					window as unknown as {
 						__map: { panBy: (offset: [number, number]) => void };
 					}
-				).__map.panBy([20, 0]),
-			);
+				).__map.panBy([20, 0]);
+			});
 			await waitForMapAtRest(page);
 			expect(await treesInView(page, wateredTrees)).not.toEqual([]);
 			const centre = await mapCentre(page);

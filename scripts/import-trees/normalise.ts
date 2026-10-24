@@ -1,4 +1,4 @@
-import { city } from "../../src/config/city";
+import { CouncilId, councils } from "../../src/config/councils";
 import { toCityDateString } from "../../src/domain/time";
 import type { PlantedDatePrecision } from "../../src/domain/tree-age";
 
@@ -11,6 +11,7 @@ export interface RawFeature {
 /** A row of the `trees` table (without `imported_at`). */
 export interface TreeRecord {
 	id: string;
+	council: CouncilId;
 	source_object_id: number | null;
 	botanical_name: string | null;
 	common_name: string | null;
@@ -28,9 +29,43 @@ export interface TreeRecord {
 	lng: number;
 }
 
-export type SkipReason = "retired" | "invalid_geometry";
+export type SkipReason =
+	| "removed"
+	| "vacant"
+	| "dead"
+	| "planned"
+	| "private_land"
+	| "invalid_geometry";
+
+const SKIP_REASONS: SkipReason[] = [
+	"removed",
+	"vacant",
+	"dead",
+	"planned",
+	"private_land",
+	"invalid_geometry",
+];
+
+export type NormaliseResult = { record: TreeRecord } | { skipped: SkipReason };
+
+/** A council's tree layer, and how its features become rows. */
+export interface TreeSource {
+	council: CouncilId;
+	/** An ArcGIS feature layer that is shared publicly. */
+	layerUrl: string;
+	/**
+	 * Put before the council's own tree ids, so they cannot clash with another
+	 * council's. Empty for the City of Perth, whose ids predate the others.
+	 */
+	idPrefix: string;
+	normalise: (
+		feature: RawFeature,
+		context: NormaliseContext,
+	) => NormaliseResult;
+}
 
 export interface NormaliseContext {
+	idPrefix: string;
 	usedIds: Set<string>;
 	/** `YYYY-MM-DD` in the city time zone. */
 	today: string;
@@ -40,6 +75,7 @@ export interface NormaliseContext {
 }
 
 export interface ImportReport {
+	council: CouncilId;
 	totalFetched: number;
 	kept: number;
 	skipped: Record<SkipReason, number>;
@@ -50,6 +86,8 @@ export interface ImportReport {
 	discardedGenusValues: Record<string, number>;
 	bbox: [number, number, number, number] | null;
 	center: { lng: number; lat: number } | null;
+	/** Trees outside the council's `bbox` in src/config/councils.ts; the map may not reach them. */
+	outsideConfiguredBbox: number;
 }
 
 const LNG_RANGE = [115, 117] as const;
@@ -57,10 +95,11 @@ const LAT_RANGE = [-33, -31] as const;
 
 // Botanical names that carry no genus.
 const NOT_A_GENUS =
-	/^(unknown|unidentified|vacant|none|n\/?a|tbc|tba|stump|dead|tree|nil)$/i;
+	/^(unknown|unidentified|unspecified|not specified|vacant|none|n\/?a|tbc|tba|stump|dead|tree|nil)$/i;
 
-export function createContext(today?: string): NormaliseContext {
+export function createContext(today?: string, idPrefix = ""): NormaliseContext {
 	return {
+		idPrefix,
 		usedIds: new Set(),
 		today: today ?? toCityDateString(new Date()),
 		discardedGenusValues: new Map(),
@@ -69,7 +108,7 @@ export function createContext(today?: string): NormaliseContext {
 }
 
 /** Trims; empty strings and non-strings become null. */
-function cleanString(value: unknown): string | null {
+export function cleanString(value: unknown): string | null {
 	if (typeof value !== "string") {
 		return null;
 	}
@@ -77,11 +116,17 @@ function cleanString(value: unknown): string | null {
 	return trimmed === "" ? null : trimmed;
 }
 
-function cleanNumber(value: unknown): number | null {
+export function cleanNumber(value: unknown): number | null {
 	return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
-const isYes = (value: unknown) =>
+/** For measurements, where 0 means "not measured". */
+export function positiveNumber(value: unknown): number | null {
+	const number = cleanNumber(value);
+	return number !== null && number > 0 ? number : null;
+}
+
+export const isYes = (value: unknown) =>
 	typeof value === "string" && value.trim().toLowerCase() === "yes";
 
 export function toTitleCase(value: string): string {
@@ -113,57 +158,8 @@ export function extractGenus(
 	return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
 }
 
-export function normalisePlantedDate(
-	epochMs: unknown,
-	today: string,
-): {
-	planted_date: string | null;
-	planted_date_precision: PlantedDatePrecision;
-} {
-	if (typeof epochMs !== "number" || !Number.isFinite(epochMs)) {
-		return { planted_date: null, planted_date_precision: "unknown" };
-	}
-	const date = toCityDateString(new Date(epochMs));
-
-	if (date === city.inventoryCaptureDate) {
-		return { planted_date: null, planted_date_precision: "before_2019" };
-	}
-	const year = Number(date.slice(0, 4));
-	if (year < 1901 || date > today) {
-		return { planted_date: null, planted_date_precision: "unknown" };
-	}
-	if (date.endsWith("-01-01")) {
-		return { planted_date: date, planted_date_precision: "year" };
-	}
-	return { planted_date: date, planted_date_precision: "day" };
-}
-
-function uniqueId(
-	treeId: unknown,
-	objectId: unknown,
-	context: NormaliseContext,
-): string {
-	const base =
-		typeof treeId === "number" ? String(treeId) : `obj-${String(objectId)}`;
-	let id = base;
-	if (context.usedIds.has(id)) {
-		id = `${base}-${String(objectId)}`;
-		context.duplicateIds += 1;
-	}
-	context.usedIds.add(id);
-	return id;
-}
-
-export function normaliseFeature(
-	feature: RawFeature,
-	context: NormaliseContext,
-): { record: TreeRecord } | { skipped: SkipReason } {
-	const p = feature.properties;
-
-	if (p.RETIRED !== null && p.RETIRED !== undefined) {
-		return { skipped: "retired" };
-	}
-
+/** `[lng, lat]` of a point feature in the south-west of WA, or null. */
+export function pointOf(feature: RawFeature): [number, number] | null {
 	const [lng, lat] =
 		feature.geometry?.type === "Point" ? feature.geometry.coordinates : [];
 	if (
@@ -174,49 +170,82 @@ export function normaliseFeature(
 		lat < LAT_RANGE[0] ||
 		lat > LAT_RANGE[1]
 	) {
-		return { skipped: "invalid_geometry" };
+		return null;
 	}
-
-	const botanicalName = cleanString(p.BOTANICAL_NAME);
-	const suburb = cleanString(p.SUBURB);
-
-	return {
-		record: {
-			id: uniqueId(p.TREE_ID, p.OBJECTID, context),
-			source_object_id: cleanNumber(p.OBJECTID),
-			botanical_name: botanicalName,
-			common_name: cleanString(p.COMMON_NAME),
-			family: cleanString(p.FAMILY),
-			genus: extractGenus(botanicalName, context.discardedGenusValues),
-			...normalisePlantedDate(p.DATE_PLANTED, context.today),
-			suburb: suburb === null ? null : toTitleCase(suburb),
-			height_m: cleanNumber(p.TREE_HEIGHT),
-			is_rare: isYes(p.RARE_SPECIES),
-			is_heritage: isYes(p.HISTORIC_SIGNIFICANCE),
-			is_significant: isYes(p.COMMUNITY_SIGNIFICANCE),
-			is_significant_group: isYes(p.SIGNIFICANT_GROUP),
-			lat,
-			lng,
-		},
-	};
+	return [lng, lat];
 }
+
+/**
+ * A planting date (`YYYY-MM-DD`) and how precise it is. Councils that only
+ * know the year record a fixed day of it; `yearOnlyDays` lists those (`MM-DD`).
+ */
+export function plantedDate(
+	date: string | null,
+	today: string,
+	yearOnlyDays: readonly string[] = ["01-01"],
+): {
+	planted_date: string | null;
+	planted_date_precision: PlantedDatePrecision;
+} {
+	if (date === null || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+		return { planted_date: null, planted_date_precision: "unknown" };
+	}
+	const year = Number(date.slice(0, 4));
+	if (year < 1901 || date > today) {
+		return { planted_date: null, planted_date_precision: "unknown" };
+	}
+	if (yearOnlyDays.includes(date.slice(5))) {
+		return { planted_date: date, planted_date_precision: "year" };
+	}
+	return { planted_date: date, planted_date_precision: "day" };
+}
+
+/**
+ * The council's own id for the tree, or `obj-<OBJECTID>` without one; a
+ * repeated id gets the OBJECTID appended.
+ */
+export function uniqueId(
+	sourceId: string | null,
+	objectId: unknown,
+	context: NormaliseContext,
+): string {
+	const base = context.idPrefix + (sourceId ?? `obj-${String(objectId)}`);
+	let id = base;
+	if (context.usedIds.has(id)) {
+		id = `${base}-${String(objectId)}`;
+		context.duplicateIds += 1;
+	}
+	context.usedIds.add(id);
+	return id;
+}
+
+/** The fields most councils do not record. */
+export const NOT_RECORDED = {
+	family: null,
+	suburb: null,
+	height_m: null,
+	is_rare: false,
+	is_heritage: false,
+	is_significant: false,
+	is_significant_group: false,
+} as const satisfies Partial<TreeRecord>;
 
 const sortedCounts = (counts: Map<string, number>) =>
 	Object.fromEntries([...counts].sort((a, b) => b[1] - a[1]));
 
 export function normaliseAll(
+	source: TreeSource,
 	features: RawFeature[],
 	today?: string,
 ): { records: TreeRecord[]; report: ImportReport } {
-	const context = createContext(today);
+	const context = createContext(today, source.idPrefix);
 	const records: TreeRecord[] = [];
-	const skipped: Record<SkipReason, number> = {
-		retired: 0,
-		invalid_geometry: 0,
-	};
+	const skipped = Object.fromEntries(
+		SKIP_REASONS.map((reason) => [reason, 0]),
+	) as Record<SkipReason, number>;
 
 	for (const feature of features) {
-		const result = normaliseFeature(feature, context);
+		const result = source.normalise(feature, context);
 		if ("skipped" in result) {
 			skipped[result.skipped] += 1;
 		} else {
@@ -236,6 +265,8 @@ export function normaliseAll(
 		minLat = Infinity,
 		maxLng = -Infinity,
 		maxLat = -Infinity;
+	const [west, south, east, north] = councils[source.council].bbox;
+	let outsideConfiguredBbox = 0;
 
 	for (const r of records) {
 		byPrecision[r.planted_date_precision] += 1;
@@ -248,12 +279,16 @@ export function normaliseAll(
 		maxLng = Math.max(maxLng, r.lng);
 		minLat = Math.min(minLat, r.lat);
 		maxLat = Math.max(maxLat, r.lat);
+		if (r.lng < west || r.lng > east || r.lat < south || r.lat > north) {
+			outsideConfiguredBbox += 1;
+		}
 	}
 
 	const hasRecords = records.length > 0;
 	return {
 		records,
 		report: {
+			council: source.council,
 			totalFetched: features.length,
 			kept: records.length,
 			skipped,
@@ -269,6 +304,7 @@ export function normaliseAll(
 			center: hasRecords
 				? { lng: (minLng + maxLng) / 2, lat: (minLat + maxLat) / 2 }
 				: null,
+			outsideConfiguredBbox,
 		},
 	};
 }

@@ -1,3 +1,5 @@
+import type { Council } from "../config/councils";
+
 interface TreeTypeInfo {
 	/** The genus as in the `genus` column of the trees table, e.g. "Platanus". */
 	id: string;
@@ -169,19 +171,16 @@ interface WaterNeed {
 	stillMissing: string;
 	dataOfLastXDays: string;
 	weatherUnavailable: string;
-	/** Legend label of the part of the ring covered by the City (young trees). */
+	/** Legend label of the part of the ring covered by the council (young trees). */
 	coveredByCity: string;
 	/** Legend label of the part of the ring for established trees. */
 	coveredEstablished: string;
-	alreadyWateredByManager: string;
+	alreadyWateredByManager: (councilName: string) => string;
 	alreadyWateredByEstablished: string;
 	offSeasonRing: string;
 	stillWaterXLiters: (liters: string) => string;
 	sufficientlyWatered: string;
-	ageAndWaterHint: (
-		councilCareMaxYears: number,
-		needsHelpMaxYears: number,
-	) => string;
+	ageAndWaterHint: (council: Council, needsHelpMaxYears: number) => string;
 	ageAndWaterHintOffSeason: (
 		seasonMonths: string,
 		offSeasonMonths: string,
@@ -205,8 +204,8 @@ interface WaterNeed {
 
 interface Problem {
 	title: string;
-	description: string;
-	link: string;
+	description: (councilName: string) => string;
+	link: (councilName: string) => string;
 }
 
 interface LastWaterings {
@@ -235,6 +234,7 @@ interface TreeDetail {
 		unknown: string;
 	};
 	facts: {
+		council: string;
 		suburb: string;
 		height: string;
 		heightValue: (metres: string) => string;
@@ -248,7 +248,7 @@ interface TreeDetail {
 		thirsty: (litres: string) => string;
 		partial: (litres: string) => string;
 		satisfied: string;
-		councilCare: string;
+		councilCare: (councilName: string) => string;
 		established: string;
 		unknownAge: string;
 		offSeason: (seasonMonths: string) => string;
@@ -261,7 +261,7 @@ interface TreeDetail {
 	waterNeed: WaterNeed;
 	lastWaterings: LastWaterings;
 	problem: Problem;
-	managedBy: (councilCareMaxYears: number) => string;
+	managedBy: (councilName: string, councilCareMaxYears: number) => string;
 	treeTypeInfos: TreeTypeInfo[];
 	treeTypeInfoTitle: string;
 }

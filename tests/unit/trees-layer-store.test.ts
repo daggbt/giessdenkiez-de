@@ -13,6 +13,7 @@ const junior: TreeFeature = {
 	geometry: { type: "Point", coordinates: [115.86, -31.95] },
 	properties: {
 		id: "junior",
+		council: "perth",
 		genus: "Platanus",
 		common_name: "London Plane",
 		planted_date: "2023-07-01",

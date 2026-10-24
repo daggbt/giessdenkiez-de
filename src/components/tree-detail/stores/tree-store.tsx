@@ -4,6 +4,7 @@ import { supabaseClient } from "../../../auth/supabase-client";
 
 const TREE_CORE_COLUMNS = [
 	"id",
+	"council",
 	"botanical_name",
 	"common_name",
 	"family",

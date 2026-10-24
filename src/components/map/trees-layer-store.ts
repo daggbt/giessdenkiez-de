@@ -8,6 +8,7 @@ import {
 	enrichFeatures,
 	EnrichedTreeProperties,
 	toFeatureCollection,
+	toMapData,
 	TreeFeature,
 } from "../../domain/tree-layer";
 import { useWeatherStore } from "../../weather/weather-store";
@@ -119,7 +120,7 @@ export const useTreesLayerStore = create<TreesLayerStore>()((set, get) => {
 
 		const source = useMapStore.getState().map?.getSource("trees") as
 			GeoJSONSource | undefined;
-		source?.setData(get().data);
+		source?.setData(toMapData(get().data.features));
 	};
 
 	return {

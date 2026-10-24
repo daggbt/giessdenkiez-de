@@ -9,6 +9,7 @@ export const WaterProgressCircle: React.FC<WaterCircleProps> = ({
 	needsWaterAmount,
 	shouldBeWatered,
 	treeAgeClassification,
+	councilName,
 	size,
 	rainSum,
 	wateringSum,
@@ -18,7 +19,7 @@ export const WaterProgressCircle: React.FC<WaterCircleProps> = ({
 
 	const circleTitle = useMemo(() => {
 		if (treeAgeClassification === TreeAgeClassification.BABY) {
-			return i18n.treeDetail.waterNeed.alreadyWateredByManager;
+			return i18n.treeDetail.waterNeed.alreadyWateredByManager(councilName);
 		}
 		if (treeAgeClassification === TreeAgeClassification.SENIOR) {
 			return i18n.treeDetail.waterNeed.alreadyWateredByEstablished;
@@ -32,7 +33,13 @@ export const WaterProgressCircle: React.FC<WaterCircleProps> = ({
 			return i18n.treeDetail.waterNeed.sufficientlyWatered;
 		}
 		return i18n.treeDetail.waterNeed.unknownTitle;
-	}, [treeAgeClassification, needsWaterAmount, shouldBeWatered, i18n]);
+	}, [
+		treeAgeClassification,
+		needsWaterAmount,
+		shouldBeWatered,
+		councilName,
+		i18n,
+	]);
 
 	return (
 		<div className="flex flex-row items-center justify-start gap-4">

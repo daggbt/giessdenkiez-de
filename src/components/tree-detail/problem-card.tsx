@@ -2,9 +2,14 @@ import React from "react";
 import { useI18nStore } from "../../i18n/i18n-store";
 import { ExternalAnchorLink } from "../anchor-link/external-anchor-link";
 import { AttentionIcon } from "../icons/attention-icon";
-import { city } from "../../config/city";
+import { Council } from "../../config/councils";
 
-export const ProblemCard: React.FC = () => {
+interface ProblemCardProps {
+	/** The council that looks after the tree. */
+	council: Council;
+}
+
+export const ProblemCard: React.FC<ProblemCardProps> = ({ council }) => {
 	const i18n = useI18nStore().i18n();
 
 	return (
@@ -17,11 +22,11 @@ export const ProblemCard: React.FC = () => {
 					<div className="font-bold">{i18n.treeDetail.problem.title}</div>
 				</div>
 				<div className="flex flex-col gap-2">
-					<div>{i18n.treeDetail.problem.description}</div>
+					<div>{i18n.treeDetail.problem.description(council.name)}</div>
 					<div>
 						<ExternalAnchorLink
-							href={city.reportProblemUrl}
-							label={i18n.treeDetail.problem.link}
+							href={council.reportProblemUrl}
+							label={i18n.treeDetail.problem.link(council.name)}
 						/>
 					</div>
 				</div>

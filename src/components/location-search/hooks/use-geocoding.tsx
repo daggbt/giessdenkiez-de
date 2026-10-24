@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { mapAreaBbox } from "../../../config/councils";
 
 export interface GeocodingResult {
 	id: string;
@@ -62,7 +63,7 @@ export function useGeocoding(): GeocodingResultState {
 					language: "en",
 					country: "au",
 					proximity: `${import.meta.env.VITE_MAP_CENTER_LNG},${import.meta.env.VITE_MAP_CENTER_LAT}`,
-					bbox: import.meta.env.VITE_MAP_BOUNDING_BOX,
+					bbox: mapAreaBbox.join(","),
 					access_token: import.meta.env.VITE_MAPBOX_API_KEY,
 				});
 				const geocodingUrl = `${

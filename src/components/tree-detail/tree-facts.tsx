@@ -1,6 +1,7 @@
 import React from "react";
 import { useI18nStore } from "../../i18n/i18n-store";
 import { TreeCoreData } from "./tree-types";
+import { councils } from "../../config/councils";
 
 interface TreeFactsProps {
 	treeData: TreeCoreData;
@@ -11,7 +12,9 @@ export const TreeFacts: React.FC<TreeFactsProps> = ({ treeData }) => {
 	const { formatNumber } = useI18nStore();
 	const facts = i18n.treeDetail.facts;
 
-	const rows: Array<[string, string]> = [];
+	const rows: Array<[string, string]> = [
+		[facts.council, councils[treeData.council].name],
+	];
 	if (treeData.suburb) {
 		rows.push([facts.suburb, treeData.suburb]);
 	}
@@ -29,12 +32,11 @@ export const TreeFacts: React.FC<TreeFactsProps> = ({ treeData }) => {
 		treeData.is_rare && facts.rare,
 	].filter((badge): badge is string => typeof badge === "string");
 
-	if (rows.length === 0 && badges.length === 0) {
-		return null;
-	}
-
 	return (
-		<div className="flex flex-col gap-3 border-b-2 py-6">
+		<div
+			className="flex flex-col gap-3 border-b-2 py-6"
+			data-testid="tree-facts"
+		>
 			{rows.map(([label, value]) => (
 				<div key={label} className="flex flex-row justify-between">
 					<div className="text-slate-500">{label}</div>

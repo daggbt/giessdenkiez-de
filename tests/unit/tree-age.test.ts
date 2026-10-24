@@ -1,5 +1,7 @@
 import { describe, expect, test } from "vitest";
+import { CouncilId } from "../../src/config/councils";
 import {
+	ageBandsOf,
 	classifyAgeYears,
 	classifyTreeAge,
 	getTreeAge,
@@ -9,9 +11,13 @@ import {
 
 const now = new Date("2027-01-15T12:00:00+08:00");
 
-const day = (planted_date: string): TreePlantingInfo => ({
+const day = (
+	planted_date: string,
+	council: CouncilId = "perth",
+): TreePlantingInfo & { council: CouncilId } => ({
 	planted_date,
 	planted_date_precision: "day",
+	council,
 });
 
 describe("classifyTreeAge", () => {
@@ -27,10 +33,22 @@ describe("classifyTreeAge", () => {
 		expect(classifyTreeAge(day("2019-01-15"), now)).toBe("SENIOR");
 	});
 
+	test("the council's watering period ends the BABY class", () => {
+		// 2.5 years: Perth waters new trees for 2 years, Cockburn for 3
+		expect(classifyTreeAge(day("2024-07-15", "perth"), now)).toBe("JUNIOR");
+		expect(classifyTreeAge(day("2024-07-15", "fremantle"), now)).toBe("JUNIOR");
+		expect(classifyTreeAge(day("2024-07-15", "cockburn"), now)).toBe("BABY");
+		expect(classifyTreeAge(day("2023-07-15", "cockburn"), now)).toBe("JUNIOR");
+	});
+
 	test("before_2019 is SENIOR", () => {
 		expect(
 			classifyTreeAge(
-				{ planted_date: null, planted_date_precision: "before_2019" },
+				{
+					planted_date: null,
+					planted_date_precision: "before_2019",
+					council: "perth",
+				},
 				now,
 			),
 		).toBe("SENIOR");
@@ -39,7 +57,11 @@ describe("classifyTreeAge", () => {
 	test("unknown precision is UNKNOWN", () => {
 		expect(
 			classifyTreeAge(
-				{ planted_date: null, planted_date_precision: "unknown" },
+				{
+					planted_date: null,
+					planted_date_precision: "unknown",
+					council: "perth",
+				},
 				now,
 			),
 		).toBe("UNKNOWN");
@@ -48,7 +70,11 @@ describe("classifyTreeAge", () => {
 	test("year precision 2008-01-01 is SENIOR", () => {
 		expect(
 			classifyTreeAge(
-				{ planted_date: "2008-01-01", planted_date_precision: "year" },
+				{
+					planted_date: "2008-01-01",
+					planted_date_precision: "year",
+					council: "perth",
+				},
 				now,
 			),
 		).toBe("SENIOR");
@@ -62,7 +88,11 @@ describe("classifyTreeAge", () => {
 		// before_2019 evaluated shortly after the capture date
 		expect(
 			classifyTreeAge(
-				{ planted_date: null, planted_date_precision: "before_2019" },
+				{
+					planted_date: null,
+					planted_date_precision: "before_2019",
+					council: "perth",
+				},
 				new Date("2020-01-01T12:00:00+08:00"),
 			),
 		).toBe("UNKNOWN");
@@ -70,6 +100,8 @@ describe("classifyTreeAge", () => {
 });
 
 describe("classifyAgeYears band edges", () => {
+	const perthBands = ageBandsOf("perth");
+
 	test.each([
 		[0, "BABY"],
 		[1.99, "BABY"],
@@ -78,11 +110,22 @@ describe("classifyAgeYears band edges", () => {
 		[5.0, "SENIOR"],
 		[30, "SENIOR"],
 	] as const)("%s years -> %s", (years, expected) => {
-		expect(classifyAgeYears(years)).toBe(expected);
+		expect(classifyAgeYears(years, false, perthBands)).toBe(expected);
 	});
 
 	test("null is UNKNOWN", () => {
-		expect(classifyAgeYears(null)).toBe("UNKNOWN");
+		expect(classifyAgeYears(null, false, perthBands)).toBe("UNKNOWN");
+	});
+
+	test("bands come from the council and the shared 'needs help' limit", () => {
+		expect(ageBandsOf("perth")).toEqual({
+			councilCareMaxYears: 2,
+			needsHelpMaxYears: 5,
+		});
+		expect(ageBandsOf("cockburn")).toEqual({
+			councilCareMaxYears: 3,
+			needsHelpMaxYears: 5,
+		});
 	});
 });
 

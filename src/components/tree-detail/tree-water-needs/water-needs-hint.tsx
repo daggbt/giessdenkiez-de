@@ -4,9 +4,15 @@ import { Markdown } from "../../markdown/markdown";
 import { useI18nStore } from "../../../i18n/i18n-store";
 import { useIsInWateringSeason } from "../../../utils/use-is-in-watering-season";
 import { city } from "../../../config/city";
+import { Council } from "../../../config/councils";
 import { formatMonthRange, getSeasonMonths } from "../../../domain/season";
 
-export const WaterNeedsHint: React.FC = () => {
+interface WaterNeedsHintProps {
+	/** The council that looks after the tree. */
+	council: Council;
+}
+
+export const WaterNeedsHint: React.FC<WaterNeedsHintProps> = ({ council }) => {
 	const i18n = useI18nStore().i18n();
 
 	const isInWateringSeason = useIsInWateringSeason();
@@ -49,8 +55,8 @@ export const WaterNeedsHint: React.FC = () => {
 					)}
 					<Markdown>
 						{i18n.treeDetail.waterNeed.ageAndWaterHint(
-							city.ageBands.councilCareMaxYears,
-							city.ageBands.needsHelpMaxYears,
+							council,
+							city.needsHelpMaxYears,
 						)}
 					</Markdown>
 					<div className="flex w-full justify-center">

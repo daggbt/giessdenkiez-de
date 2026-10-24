@@ -1,4 +1,4 @@
-import { getTreeAge, classifyAgeYears } from "../../../domain/tree-age";
+import { classifyTreeAge } from "../../../domain/tree-age";
 import { getNow } from "../../../domain/time";
 import { TreeAgeClassificationState, TreeCoreData } from "../tree-types";
 
@@ -10,7 +10,5 @@ export function useTreeAgeClassification(
 		return { treeAgeClassification: "UNKNOWN" };
 	}
 
-	const { ageYears, isLowerBound } = getTreeAge(treeData, referenceDate);
-
-	return { treeAgeClassification: classifyAgeYears(ageYears, isLowerBound) };
+	return { treeAgeClassification: classifyTreeAge(treeData, referenceDate) };
 }

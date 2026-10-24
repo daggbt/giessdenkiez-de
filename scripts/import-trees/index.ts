@@ -1,6 +1,7 @@
 import { parseArgs } from "node:util";
+import { councils } from "../../src/config/councils";
 import { fetchAllFeatures } from "./fetch";
-import { normaliseAll } from "./normalise";
+import { ImportReport, normaliseAll, TreeRecord } from "./normalise";
 import {
 	printSummary,
 	pushToSupabase,
@@ -8,6 +9,7 @@ import {
 	writeReport,
 	writeSeedSql,
 } from "./outputs";
+import { sources } from "./sources";
 
 const { values } = parseArgs({
 	options: {
@@ -30,13 +32,23 @@ async function main() {
 		);
 	}
 
-	console.log("Fetching the City of Perth tree inventory...");
-	const features = await fetchAllFeatures((fetched, expected) =>
-		console.log(`  ${fetched} / ${expected}`),
-	);
-
-	const { records, report } = normaliseAll(features);
-	printSummary(report);
+	// One after the other: all councils or none, so a failed download leaves the
+	// committed files as they were.
+	const records: TreeRecord[] = [];
+	const reports: ImportReport[] = [];
+	for (const source of sources) {
+		console.log(
+			`\nFetching the ${councils[source.council].name} tree inventory...`,
+		);
+		const features = await fetchAllFeatures(
+			source.layerUrl,
+			(fetched, expected) => console.log(`  ${fetched} / ${expected}`),
+		);
+		const result = normaliseAll(source, features);
+		printSummary(result.report);
+		records.push(...result.records);
+		reports.push(result.report);
+	}
 
 	if (dryRun) {
 		console.log("\nDry run: no files written, nothing pushed.");
@@ -49,7 +61,7 @@ async function main() {
 	);
 	writeSeedSql(records, values["out-seed"]);
 	console.log(`Wrote ${values["out-seed"]}`);
-	writeReport(report, "data/import-report.json");
+	writeReport(reports, "data/import-report.json");
 	console.log("Wrote data/import-report.json");
 
 	if (values.push && supabaseUrl && serviceRoleKey) {

@@ -1,7 +1,10 @@
 import type { Feature, FeatureCollection, Point } from "geojson";
+import { CouncilId, councilIds } from "../config/councils";
 import { isInWateringSeason } from "./season";
 import { toCityDateString } from "./time";
 import {
+	AgeBands,
+	ageBandsOf,
 	classifyAgeYears,
 	getTreeAgeOn,
 	PlantedDatePrecision,
@@ -12,6 +15,7 @@ import { getNeedStatus, NeedStatus } from "./tree-status";
 /** Properties of a feature in public/data/trees.geojson. */
 export interface TreeProperties {
 	id: string;
+	council: CouncilId;
 	genus: string | null;
 	common_name: string | null;
 	planted_date: string | null;
@@ -57,6 +61,9 @@ export function enrichFeatures(
 	const inSeason = isInWateringSeason(now);
 	// Once for all trees: formatting the date is the slow part of an age.
 	const today = toCityDateString(now);
+	const bandsByCouncil = Object.fromEntries(
+		councilIds.map((council) => [council, ageBandsOf(council)]),
+	) as Record<CouncilId, AgeBands>;
 
 	return features.map((feature) => {
 		const properties = feature.properties;
@@ -64,7 +71,11 @@ export function enrichFeatures(
 		const watered30dL = activity?.watered_litres_30d ?? 0;
 
 		const { ageYears, isLowerBound } = getTreeAgeOn(properties, today);
-		const ageClass = classifyAgeYears(ageYears, isLowerBound);
+		const ageClass = classifyAgeYears(
+			ageYears,
+			isLowerBound,
+			bandsByCouncil[properties.council],
+		);
 
 		let ageBucket = -1;
 		if (ageYears !== null) {
@@ -97,6 +108,35 @@ export function toFeatureCollection(
 	features: EnrichedTreeFeature[],
 ): FeatureCollection<Point, EnrichedTreeProperties> {
 	return { type: "FeatureCollection", features };
+}
+
+/** The properties the map's expressions read (use-tree-circle-style.tsx, tree-filters.ts). */
+export type MapTreeProperties = Pick<
+	EnrichedTreeProperties,
+	"id" | "need" | "age_bucket" | "adopted" | "watered_30d_l"
+>;
+
+/**
+ * The trees as the map gets them. Mapbox keeps its own copy of every property
+ * in a worker, for each zoom level it tiles; with all councils' trees the rest
+ * took gigabytes.
+ */
+export function toMapData(
+	features: EnrichedTreeFeature[],
+): FeatureCollection<Point, MapTreeProperties> {
+	return {
+		type: "FeatureCollection",
+		features: features.map(
+			({
+				geometry,
+				properties: { id, need, age_bucket, adopted, watered_30d_l },
+			}) => ({
+				type: "Feature",
+				geometry,
+				properties: { id, need, age_bucket, adopted, watered_30d_l },
+			}),
+		),
+	};
 }
 
 /** Number of trees per age bucket (index 0 to 10); trees of unknown age are left out. */

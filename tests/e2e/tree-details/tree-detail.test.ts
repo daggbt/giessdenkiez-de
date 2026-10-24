@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { city } from "../../../src/config/city";
+import { councils } from "../../../src/config/councils";
 import { testWithoutSplashScreen } from "../fixtures/test-without-splash-screen";
 import { findTree, IN_SEASON_DATE, IN_SEASON_NOW } from "../trees";
 
@@ -40,7 +40,63 @@ testWithoutSplashScreen.describe("Tree detail view", () => {
 			const link = page.getByRole("link", {
 				name: "Contact the City of Perth",
 			});
-			expect(await link.getAttribute("href")).toBe(city.reportProblemUrl);
+			expect(await link.getAttribute("href")).toBe(
+				councils.perth.reportProblemUrl,
+			);
+			await expect(page.getByTestId("tree-facts")).toContainText(
+				"CouncilCity of Perth",
+			);
+		},
+	);
+
+	testWithoutSplashScreen(
+		"should name the council of a tree from another council",
+		async ({ page }) => {
+			const tree = findTree("BABY", {
+				now: IN_SEASON_NOW,
+				council: "fremantle",
+			});
+			await page.goto(`/map?now=${IN_SEASON_DATE}&treeId=${tree.id}`);
+
+			await expect(
+				page.getByText(
+					"The City of Fremantle waters new trees for their first 2 years, so this tree does not need your help yet.",
+				),
+			).toBeVisible();
+			await expect(page.getByTestId("tree-status")).toHaveText(
+				"Watered by the City of Fremantle: no need to water yet",
+			);
+			await expect(page.getByTestId("tree-facts")).toContainText(
+				"CouncilCity of Fremantle",
+			);
+			const link = page.getByRole("link", {
+				name: "Contact the City of Fremantle",
+			});
+			expect(await link.getAttribute("href")).toBe(
+				councils.fremantle.reportProblemUrl,
+			);
+		},
+	);
+
+	testWithoutSplashScreen(
+		"should show a tree whose council has no planting dates",
+		async ({ page }) => {
+			const tree = findTree("UNKNOWN", { council: "cockburn" });
+			await page.goto(`/map?now=${IN_SEASON_DATE}&treeId=${tree.id}`);
+
+			await expect(
+				page.getByText(tree.common_name ?? "").first(),
+			).toBeVisible();
+			await expect(page.getByTestId("age")).toHaveText("Planting date unknown");
+			await expect(page.getByTestId("tree-status")).toHaveText(
+				"Water needs unknown: the planting date is not known",
+			);
+			const link = page.getByRole("link", {
+				name: "Contact the City of Cockburn",
+			});
+			expect(await link.getAttribute("href")).toBe(
+				councils.cockburn.reportProblemUrl,
+			);
 		},
 	);
 

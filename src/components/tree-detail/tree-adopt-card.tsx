@@ -7,7 +7,7 @@ import { Tooltip as AdoptTreeTooltip } from "./tree-water-needs/tooltip";
 import { TreeAgeClassification, TreeCoreData } from "./tree-types";
 import { InternalAnchorLink } from "../anchor-link/internal-anchor-link";
 import { InfoIcon } from "../icons/info-icon";
-import { city } from "../../config/city";
+import { councils } from "../../config/councils";
 import { useProfileStore } from "../../shared-stores/profile-store";
 import { useTreesLayerStore } from "../map/trees-layer-store";
 
@@ -139,7 +139,10 @@ export const TreeAdoptCard: React.FC<TreeAdoptCardProps> = ({
 
 				{treeAgeClassification === TreeAgeClassification.BABY && (
 					<div>
-						{i18n.treeDetail.managedBy(city.ageBands.councilCareMaxYears)}
+						{i18n.treeDetail.managedBy(
+							councils[treeData.council].name,
+							councils[treeData.council].councilCareMaxYears,
+						)}
 					</div>
 				)}
 			</div>

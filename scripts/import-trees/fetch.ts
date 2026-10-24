@@ -1,7 +1,6 @@
 import type { RawFeature } from "./normalise";
 
-const LAYER_URL =
-	"https://services7.arcgis.com/v8XBa2naYNQGOjlG/arcgis/rest/services/PKS_AST_TREESMASTER_PV/FeatureServer/0";
+// The most every council's layer returns per request (its maxRecordCount).
 const PAGE_SIZE = 2000;
 const MAX_ATTEMPTS = 3;
 
@@ -34,22 +33,24 @@ async function fetchJson<T>(url: string): Promise<T> {
 	);
 }
 
-export async function fetchExpectedCount(): Promise<number> {
+export async function fetchExpectedCount(layerUrl: string): Promise<number> {
 	const body = await fetchJson<{ count: number }>(
-		`${LAYER_URL}/query?where=1%3D1&returnCountOnly=true&f=json`,
+		`${layerUrl}/query?where=1%3D1&returnCountOnly=true&f=json`,
 	);
 	return body.count;
 }
 
+/** All features of an ArcGIS feature layer, in WGS 84. */
 export async function fetchAllFeatures(
+	layerUrl: string,
 	onProgress?: (fetched: number, expected: number) => void,
 ): Promise<RawFeature[]> {
-	const expected = await fetchExpectedCount();
+	const expected = await fetchExpectedCount(layerUrl);
 	const features: RawFeature[] = [];
 
 	for (let offset = 0; ; offset += PAGE_SIZE) {
 		const page = await fetchJson<{ features: RawFeature[] }>(
-			`${LAYER_URL}/query?where=1%3D1&outFields=*&outSR=4326&orderByFields=OBJECTID` +
+			`${layerUrl}/query?where=1%3D1&outFields=*&outSR=4326&orderByFields=OBJECTID` +
 				`&resultOffset=${offset}&resultRecordCount=${PAGE_SIZE}&f=geojson`,
 		);
 		features.push(...page.features);

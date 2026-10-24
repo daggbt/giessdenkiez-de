@@ -1,3 +1,4 @@
+import { CouncilId } from "../../config/councils";
 import { AgeClass, PlantedDatePrecision } from "../../domain/tree-age";
 
 // Same values as the upstream enum; the definition lives in the domain module.
@@ -12,6 +13,7 @@ export type TreeAgeClassification = AgeClass;
 /** Mirrors a row of the `trees` table. */
 export interface TreeCoreData {
 	id: string;
+	council: CouncilId;
 	botanical_name: string | null;
 	common_name: string | null;
 	family: string | null;
@@ -71,6 +73,8 @@ export interface WaterCircleProps {
 	needsWaterAmount: number;
 	shouldBeWatered: boolean;
 	treeAgeClassification: TreeAgeClassification;
+	/** The council that looks after the tree. */
+	councilName: string;
 	size: number;
 	rainSum: number;
 	wateringSum: number;

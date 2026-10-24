@@ -17,6 +17,7 @@ import { TreeFlier } from "./tree-flier";
 import { Loading } from "../loading/loading";
 import { TreeIcon } from "../icons/tree-icon";
 import { useShallow } from "zustand/react/shallow";
+import { councils } from "../../config/councils";
 
 export const TreeDetail: React.FC = () => {
 	const i18n = useI18nStore().i18n();
@@ -83,6 +84,7 @@ export const TreeDetail: React.FC = () => {
 						<TreeStatus
 							treeAgeClassification={treeAgeClassification}
 							treeWateringData={treeWateringData}
+							council={councils[treeCoreData.council]}
 						/>
 						<WaterTree
 							treeData={treeCoreData}
@@ -93,6 +95,7 @@ export const TreeDetail: React.FC = () => {
 					<TreeWaterNeed
 						treeAgeClassification={treeAgeClassification}
 						treeWateringData={treeWateringData}
+						council={councils[treeCoreData.council]}
 					/>
 					<LastWaterings treeWateringData={treeWateringData} />
 
@@ -101,7 +104,7 @@ export const TreeDetail: React.FC = () => {
 					{treeTypeInfo && (
 						<TreeFlier info={treeTypeInfo.description}></TreeFlier>
 					)}
-					<ProblemCard />
+					<ProblemCard council={councils[treeCoreData.council]} />
 				</div>
 			) : (
 				<Loading loadingText={i18n.loading.treeLoading} />

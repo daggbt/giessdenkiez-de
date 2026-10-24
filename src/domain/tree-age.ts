@@ -1,4 +1,5 @@
 import { city } from "../config/city";
+import { CouncilId, councils } from "../config/councils";
 import { toCityDateString } from "./time";
 
 export type AgeClass = "BABY" | "JUNIOR" | "SENIOR" | "UNKNOWN";
@@ -8,6 +9,19 @@ export type PlantedDatePrecision = "day" | "year" | "before_2019" | "unknown";
 export interface TreePlantingInfo {
 	planted_date: string | null;
 	planted_date_precision: PlantedDatePrecision;
+}
+
+/** Where a tree's age class changes, in years. */
+export interface AgeBands {
+	councilCareMaxYears: number;
+	needsHelpMaxYears: number;
+}
+
+export function ageBandsOf(council: CouncilId): AgeBands {
+	return {
+		councilCareMaxYears: councils[council].councilCareMaxYears,
+		needsHelpMaxYears: city.needsHelpMaxYears,
+	};
 }
 
 export interface TreeAge {
@@ -53,12 +67,12 @@ export function getTreeAgeOn(tree: TreePlantingInfo, today: string): TreeAge {
 /** Age class from an age in years; band edges belong to the older class. */
 export function classifyAgeYears(
 	ageYears: number | null,
-	isLowerBound = false,
+	isLowerBound: boolean,
+	{ councilCareMaxYears, needsHelpMaxYears }: AgeBands,
 ): AgeClass {
 	if (ageYears === null) {
 		return "UNKNOWN";
 	}
-	const { councilCareMaxYears, needsHelpMaxYears } = city.ageBands;
 
 	// A lower bound below the "needs help" limit says nothing about the real age.
 	if (isLowerBound && ageYears < needsHelpMaxYears) {
@@ -73,7 +87,10 @@ export function classifyAgeYears(
 	return "SENIOR";
 }
 
-export function classifyTreeAge(tree: TreePlantingInfo, now: Date): AgeClass {
+export function classifyTreeAge(
+	tree: TreePlantingInfo & { council: CouncilId },
+	now: Date,
+): AgeClass {
 	const { ageYears, isLowerBound } = getTreeAge(tree, now);
-	return classifyAgeYears(ageYears, isLowerBound);
+	return classifyAgeYears(ageYears, isLowerBound, ageBandsOf(tree.council));
 }

@@ -11,6 +11,7 @@ import {
 import { formatMonthRange, getSeasonMonths } from "../../domain/season";
 import { Markdown } from "../markdown/markdown";
 import { TreeAgeClassification, TreeWateringData } from "./tree-types";
+import { Council } from "../../config/councils";
 
 // Written out in full so Tailwind generates the classes.
 const CHIP_CLASS: Record<(typeof NEED_STATUS_COLOR_TOKEN)[NeedStatus], string> =
@@ -23,6 +24,8 @@ const CHIP_CLASS: Record<(typeof NEED_STATUS_COLOR_TOKEN)[NeedStatus], string> =
 interface TreeStatusProps {
 	treeAgeClassification: TreeAgeClassification;
 	treeWateringData: TreeWateringData[];
+	/** The council that looks after the tree. */
+	council: Council;
 }
 
 /**
@@ -32,6 +35,7 @@ interface TreeStatusProps {
 export const TreeStatus: React.FC<TreeStatusProps> = ({
 	treeAgeClassification,
 	treeWateringData,
+	council,
 }) => {
 	const i18n = useI18nStore().i18n();
 	const { formatNumber } = useI18nStore();
@@ -58,7 +62,7 @@ export const TreeStatus: React.FC<TreeStatusProps> = ({
 		THIRSTY: status.thirsty(litres),
 		PARTIAL: status.partial(litres),
 		SATISFIED: status.satisfied,
-		COUNCIL_CARE: status.councilCare,
+		COUNCIL_CARE: status.councilCare(council.name),
 		ESTABLISHED: status.established,
 		UNKNOWN_AGE: status.unknownAge,
 		OFF_SEASON: status.offSeason(formatMonthRange(getSeasonMonths().season)),

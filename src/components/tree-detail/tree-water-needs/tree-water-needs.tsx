@@ -11,15 +11,19 @@ import { WaterNeedsTitle } from "./water-needs-title";
 import { WaterProgressCircleWinter } from "./water-progress-circle/water-progress-circle-winter";
 import { useWeatherStore } from "../../../weather/weather-store";
 import { useIsInWateringSeason } from "../../../utils/use-is-in-watering-season";
+import { Council } from "../../../config/councils";
 
 interface TreeWaterNeedProps {
 	treeAgeClassification: TreeAgeClassification;
 	treeWateringData: TreeWateringData[];
+	/** The council that looks after the tree. */
+	council: Council;
 }
 
 export const TreeWaterNeed: React.FC<TreeWaterNeedProps> = ({
 	treeAgeClassification,
 	treeWateringData,
+	council,
 }) => {
 	const i18n = useI18nStore().i18n();
 
@@ -55,7 +59,7 @@ export const TreeWaterNeed: React.FC<TreeWaterNeedProps> = ({
 			</button>
 			{isExpanded && (
 				<div className="flex flex-col gap-4">
-					<WaterNeedsHint />
+					<WaterNeedsHint council={council} />
 
 					<WaterNeedsTitle
 						treeAgeClassification={treeAgeClassification}
@@ -68,6 +72,7 @@ export const TreeWaterNeed: React.FC<TreeWaterNeedProps> = ({
 							needsWaterAmount={stillMissingWater}
 							shouldBeWatered={shouldBeWatered}
 							treeAgeClassification={treeAgeClassification}
+							councilName={council.name}
 							size={200}
 							rainSum={rainSum}
 							wateringSum={wateringSum}

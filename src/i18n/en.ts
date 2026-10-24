@@ -1,6 +1,39 @@
 import { city } from "../config/city";
+import {
+	councilIds,
+	councilNames,
+	councils,
+	formatList,
+} from "../config/councils";
 import { formatMonthRange, getSeasonMonths } from "../domain/season";
 import { Content } from "./content-types";
+
+const allCouncils = councilIds.map((id) => councils[id]);
+
+const careYearsList = allCouncils
+	.map(
+		({ name, councilCareMaxYears, careSource }) =>
+			`- ${name}: ${councilCareMaxYears} years ([${careSource.label}](${careSource.url}))`,
+	)
+	.join("\n");
+
+const reportProblemList = allCouncils
+	.map(({ name, reportProblemUrl }) => `- [${name}](${reportProblemUrl})`)
+	.join("\n");
+
+const treeDataList = allCouncils
+	.map(
+		({ name, treeData }) =>
+			`- [${treeData.label}, ${name}](${treeData.url})${treeData.licence ? ` (${treeData.licence})` : ""}`,
+	)
+	.join("\n");
+
+// "The City of Fremantle, the City of Cockburn and the Town of Bassendean"
+const councilsWithoutLicence = formatList(
+	allCouncils
+		.filter(({ treeData }) => treeData.licence === null)
+		.map(({ name }) => `the ${name}`),
+).replace(/^the/, "The");
 
 // TODO(confirm): wording to be reviewed (Q8)
 const acknowledgementOfCountry =
@@ -17,9 +50,10 @@ export const en: Content = {
 				href: "https://www.openstreetmap.org/copyright",
 				label: "© OpenStreetMap",
 			},
+			// The information page lists each council's data and licence.
 			treeData: {
-				href: city.dataAttribution.url,
-				label: city.dataAttribution.text,
+				href: "/about",
+				label: `Tree data © ${formatList(allCouncils.map(({ shortName }) => shortName))} councils`,
 			},
 			weather: {
 				href: "https://open-meteo.com/",
@@ -156,11 +190,11 @@ export const en: Content = {
 		about: {
 			head: {
 				question: "About the project",
-				answer: `Young street trees in the ${city.councilName} need extra water through hot, dry summers. ${city.appName} shows which trees are thirsty, so volunteers can help the ones that need it most.
+				answer: `Young street trees in ${city.areaName} need extra water through hot, dry summers. ${city.appName} shows which trees are thirsty, so volunteers can help the ones that need it most.
 
 Pick a tree on the map, see how old it is and how much rain and water it has had in the last 30 days, then log your watering. Trees you adopt appear in your profile.`,
 				aboutUsTitle: "About us",
-				aboutUsAnswer: `${city.appName} is a community prototype built on [Gieß den Kiez](https://github.com/technologiestiftung/giessdenkiez-de) by Technologiestiftung Berlin and CityLAB Berlin (MIT licence). It is not run by the ${city.councilName}.`,
+				aboutUsAnswer: `${city.appName} is a community prototype built on [Gieß den Kiez](https://github.com/technologiestiftung/giessdenkiez-de) by Technologiestiftung Berlin and CityLAB Berlin (MIT licence). It is not run by any of the councils whose trees it shows.`,
 				acknowledgementTitle: "Acknowledgement of Country",
 				// TODO(confirm): wording to be reviewed (Q8)
 				acknowledgement: acknowledgementOfCountry,
@@ -179,15 +213,21 @@ Pick a tree on the map, see how old it is and how much rain and water it has had
 			qa: [
 				{
 					question: "Useful links",
-					answer: `[Urban Forest Plan FAQs (${city.councilName})](https://engage.perth.wa.gov.au/urban-forest-plan/faqs)
+					answer: `How long the councils water new trees:
 
-[Report a problem with a tree (${city.councilName})](${city.reportProblemUrl})`,
+${careYearsList}
+
+Report a problem with a tree:
+
+${reportProblemList}`,
 				},
 				{
 					question: "Data sources",
-					answer: `The map shows the public trees in the ${city.councilName} inventory. Trees on private land and outside the ${city.councilName} area are not included.
+					answer: `The map shows the public trees in the inventories of the ${councilNames}. Trees on private land and in other council areas are not included.
 
-[Trees in the City, ${city.councilName} (data.gov.au)](${city.dataAttribution.url})
+${treeDataList}
+
+${councilsWithoutLicence} publish their tree data without stating a licence. This non-commercial prototype shows it with credit to them.
 
 Rain from [Open-Meteo](https://open-meteo.com/), and map data from [Mapbox](https://www.mapbox.com/about/maps/) and [OpenStreetMap](https://www.openstreetmap.org/copyright).`,
 				},
@@ -199,19 +239,23 @@ Rain from [Open-Meteo](https://open-meteo.com/), and map data from [Mapbox](http
 			qa: [
 				{
 					question: "What is this?",
-					answer: `Volunteers help young ${city.councilName} street trees through hot, dry summers. This map shows which trees are thirsty, and lets you log when you water one.`,
+					answer: `Volunteers help young street trees in ${city.areaName} through hot, dry summers. This map shows which trees are thirsty, and lets you log when you water one.`,
 				},
 				{
 					question: "Why do young trees need help in Perth?",
-					answer: `Perth summers are long and dry. The ${city.councilName} waters new trees for their first ${city.ageBands.councilCareMaxYears} years ([source: Urban Forest Plan FAQs](https://engage.perth.wa.gov.au/urban-forest-plan/faqs)). After that, young trees are still building their roots and can struggle without rain.`,
+					answer: `Perth summers are long and dry. The councils water new trees for their first years:
+
+${careYearsList}
+
+After that, young trees are still building their roots and can struggle without rain.`,
 				},
 				{
 					question: "Which trees should I water?",
 					answer: `Look for orange trees first, then yellow ones.
 
-- **Orange**: thirsty. Planted ${city.ageBands.councilCareMaxYears} to ${city.ageBands.needsHelpMaxYears} years ago, with little rain or water in the last 30 days.
+- **Orange**: thirsty. Its council no longer waters it, it is younger than ${city.needsHelpMaxYears} years, and it had little rain or water in the last 30 days.
 - **Yellow**: watered recently, but still needs more.
-- **Green**: fine for now, or watered by the ${city.councilName}.
+- **Green**: fine for now, or watered by its council.
 
 The watering season runs ${formatMonthRange(getSeasonMonths().season)}. Outside it, the trees do not need extra water.`,
 				},
@@ -226,11 +270,15 @@ The watering season runs ${formatMonthRange(getSeasonMonths().season)}. Outside 
 				},
 				{
 					question: "Why is a tree missing or wrong?",
-					answer: `The map uses the ${city.councilName} inventory of public trees. Private trees and trees outside the ${city.councilName} area are not included. If a record is wrong, please [report it to the ${city.councilName}](${city.reportProblemUrl}).`,
+					answer: `The map uses the councils' inventories of public trees. Private trees and trees in other council areas are not included. If a record is wrong, please report it to the tree's council: the link is at the bottom of the tree's page.`,
+				},
+				{
+					question: "Why does a tree never turn orange?",
+					answer: `We need a tree's planting date to tell whether it is young. Not every council records planting dates, and many older trees have none. Without one, a tree stays green and its page says the planting date is unknown.`,
 				},
 				{
 					question: `What does "planted before ${city.inventoryCaptureDate.slice(0, 4)}" mean?`,
-					answer: `Many records carry the date of the ${city.inventoryCaptureDate.slice(0, 4)} inventory instead of the real planting date. We treat those trees as established.`,
+					answer: `Many City of Perth records carry the date of its ${city.inventoryCaptureDate.slice(0, 4)} inventory instead of the real planting date. We treat those trees as established.`,
 				},
 				{
 					question: "What is public about me?",
@@ -253,13 +301,13 @@ The watering season runs ${formatMonthRange(getSeasonMonths().season)}. Outside 
 		},
 		share: {
 			title: `Share ${city.appName} with those around you and help the trees:`,
-			content: `On ${city.appName} you can find thirsty trees in the ${city.councilName} and record when you watered them!`,
+			content: `On ${city.appName} you can find thirsty trees in ${city.areaName} and record when you watered them!`,
 			openSource: `${city.appName} is built on the [open source Gieß den Kiez](https://github.com/technologiestiftung/giessdenkiez-de).`,
 		},
 		credits: {
 			builtOn:
 				"Built on [Gieß den Kiez](https://github.com/technologiestiftung/giessdenkiez-de) by Technologiestiftung Berlin and CityLAB Berlin (MIT licence).",
-			data: `Tree data © ${city.councilName} (CC BY). Weather data by [Open-Meteo](https://open-meteo.com/). Map data © [Mapbox](https://www.mapbox.com/about/maps/) and [OpenStreetMap](https://www.openstreetmap.org/copyright).`,
+			data: `Tree data © ${formatList(allCouncils.map(({ name, treeData }) => (treeData.licence ? `${name} (${treeData.licence})` : name)))}. Weather data by [Open-Meteo](https://open-meteo.com/). Map data © [Mapbox](https://www.mapbox.com/about/maps/) and [OpenStreetMap](https://www.openstreetmap.org/copyright).`,
 		},
 	},
 	treeDetail: {
@@ -275,6 +323,7 @@ The watering season runs ${formatMonthRange(getSeasonMonths().season)}. Outside 
 			unknown: "Planting date unknown",
 		},
 		facts: {
+			council: "Council",
 			suburb: "Suburb",
 			height: "Height",
 			heightValue: (metres: string) => `${metres} m`,
@@ -290,7 +339,8 @@ The watering season runs ${formatMonthRange(getSeasonMonths().season)}. Outside 
 			partial: (litres: string) =>
 				`**Watered recently,** but still needs about ${litres} litres`,
 			satisfied: "**Well watered** for now",
-			councilCare: `**Watered by the ${city.councilName}:** no need to water yet`,
+			councilCare: (councilName: string) =>
+				`**Watered by the ${councilName}:** no need to water yet`,
 			established: "**Established tree:** no need to water",
 			unknownAge: "**Water needs unknown:** the planting date is not known",
 			offSeason: (seasonMonths: string) =>
@@ -305,8 +355,8 @@ The watering season runs ${formatMonthRange(getSeasonMonths().season)}. Outside 
 		adoptErrorMessage: "Error adopting the tree. Please try again.",
 		adoptLoginFirst: "Please log in first to adopt this tree",
 		treeTypeUnknown: "Tree species unknown",
-		managedBy: (councilCareMaxYears: number) =>
-			`The ${city.councilName} waters new trees for their first ${councilCareMaxYears} years, so this tree does not need your help yet.`,
+		managedBy: (councilName: string, councilCareMaxYears: number) =>
+			`The ${councilName} waters new trees for their first ${councilCareMaxYears} years, so this tree does not need your help yet.`,
 		waterNeed: {
 			title: "Water needs",
 			hintOffSeason: (seasonMonths: string) =>
@@ -314,7 +364,7 @@ The watering season runs ${formatMonthRange(getSeasonMonths().season)}. Outside 
 			hint: "Depending on the age of the tree, the need for water varies.",
 			needXLiters: (liters: string) =>
 				`Target: ${liters} L every 30 days (rain included)`,
-			waterManagedBaby: "Watered by the City",
+			waterManagedBaby: "Watered by the council",
 			waterManagedSenior: "Established tree",
 			offSeasonTitle: "Outside the watering season",
 			unknownTitle: "Water needs **unknown**",
@@ -326,9 +376,10 @@ The watering season runs ${formatMonthRange(getSeasonMonths().season)}. Outside 
 			dataOfLastXDays: "* data of last 30 days",
 			weatherUnavailable:
 				"Rain data currently unavailable \u2014 showing waterings only.",
-			coveredByCity: "Watered by the City",
+			coveredByCity: "Watered by the council",
 			coveredEstablished: "Established",
-			alreadyWateredByManager: `Watered by the **${city.councilName}**`,
+			alreadyWateredByManager: (councilName: string) =>
+				`Watered by the **${councilName}**`,
 			alreadyWateredByEstablished: "**Established** tree",
 			offSeasonRing: "No watering needed outside the season",
 			stillWaterXLiters: (liters: string) => `
@@ -337,10 +388,10 @@ Needs
 **${liters} litres**`,
 			sufficientlyWatered: "Sufficiently watered at the moment",
 			ageAndWaterHint: (
-				councilCareMaxYears: number,
+				{ name, councilCareMaxYears, careSource },
 				needsHelpMaxYears: number,
 			) => `
-**Under ${councilCareMaxYears} years**: the ${city.councilName} waters new trees ([source: City of Perth Urban Forest FAQ](https://engage.perth.wa.gov.au/urban-forest-plan/faqs)).
+**Under ${councilCareMaxYears} years**: the ${name} waters new trees ([source: ${careSource.label}](${careSource.url})).
 
 **${councilCareMaxYears}\u2013${needsHelpMaxYears} years**: these trees benefit most from your help.
 
@@ -378,8 +429,9 @@ The watering season is ${seasonMonths}. Outside the season (${offSeasonMonths}) 
 		},
 		problem: {
 			title: "Report a problem",
-			description: `Noticed damage or a problem with this tree? Report it to the ${city.councilName}.`,
-			link: `Contact the ${city.councilName}`,
+			description: (councilName: string) =>
+				`Noticed damage or a problem with this tree? Report it to the ${councilName}.`,
+			link: (councilName: string) => `Contact the ${councilName}`,
 		},
 		// TODO(confirm): species text drafted by agent, needs review (Q10)
 		treeTypeInfos: [
@@ -477,7 +529,7 @@ The watering season is ${seasonMonths}. Outside the season (${offSeasonMonths}) 
 		reload: "Reload",
 	},
 	splash: {
-		headline: `Young trees in the ${city.councilName} need your help through hot, dry summers.`,
+		headline: `Young trees in ${city.areaName} need your help through hot, dry summers.`,
 		subheadlineWinter: `The watering season runs ${formatMonthRange(getSeasonMonths().season)}. Until then, the trees do not need extra water.
 **Come back when the weather warms up!**`,
 		subheadline:
@@ -486,7 +538,7 @@ The watering season is ${seasonMonths}. Outside the season (${offSeasonMonths}) 
 		actionTitleWinter: "Explore!",
 		discoverTitle: "Discover",
 		discoverContent:
-			"The map shows the City's public trees with their species, age and water needs. Use the filter and search to get an overview.",
+			"The map shows the councils' public trees with their species, age and water needs. Use the filter and search to get an overview.",
 		waterTitle: "Water",
 		waterContent:
 			"Grab a watering can, help a thirsty young tree and log how many litres you gave it.",
@@ -497,7 +549,7 @@ The watering season is ${seasonMonths}. Outside the season (${offSeasonMonths}) 
 		letsGo: "Let's go",
 	},
 	loading: {
-		mapLoading: "We are currently loading the City of Perth's trees.",
+		mapLoading: "We are currently loading the trees.",
 		treeLoading: "Loading tree information...",
 		profileLoading: "Loading...",
 	},

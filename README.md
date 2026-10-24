@@ -1,6 +1,6 @@
 # Perth Tree Watering (prototype)
 
-A prototype web app that helps residents water young street trees managed by the **City of Perth** (Western Australia). It shows the City's tree inventory on a map, coloured by water need. Residents can log waterings and adopt trees.
+A prototype web app that helps residents water young street trees in Perth (Western Australia). It shows the public tree inventories of the **City of Perth**, the **City of Fremantle**, the **City of Cockburn** and the **Town of Bassendean** on a map, coloured by water need. Residents can log waterings and adopt trees.
 
 > Status: prototype. The working plan lives in [docs/perth-prototype-roadmap.md](./docs/perth-prototype-roadmap.md).
 
@@ -31,7 +31,7 @@ Scripts:
 | `npm run test:integration` | RPC and RLS tests against local Supabase                                               |
 | `npm run test:e2e`         | Playwright smoke tests against local Supabase (builds the app; needs `supabase start`) |
 | `npm run build`            | Type check and production build                                                        |
-| `npm run import:trees`     | Re-imports the City of Perth trees, see below                                          |
+| `npm run import:trees`     | Re-imports the councils' trees, see below                                              |
 
 `test:e2e` is not part of CI because CI does not start Supabase. It runs one worker on purpose: the map renders with software WebGL. It reuses a server already listening on `VITE_PORT`, so stop any old `vite preview` before running it, otherwise it tests a stale build.
 
@@ -45,6 +45,10 @@ SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... npm run import:trees -- --push   
 
 Then redeploy so the new GeoJSON is served. The service-role key is only ever read from the environment by this script; never give it a `VITE_` prefix.
 
+The import fetches each council's ArcGIS layer in turn (`scripts/import-trees/sources.ts` maps their fields) and fails as a whole if one is unreachable. Each council's name, links, how long it waters new trees and the area of its trees live in `src/config/councils.ts`. The import warns when trees fall outside that area, because the map cannot be moved beyond it. Tree ids of the City of Perth are its own asset ids, as before; the other councils' ids carry a prefix, e.g. `fremantle-TRE03987`.
+
+To add another council: add its layer and field mapping to `sources.ts`, its entry to `councils.ts`, and its id to the `trees_council_check` constraint in a new migration.
+
 ## Deploy
 
 1. Create a Supabase project in **ap-southeast-2 (Sydney)**, then `npx supabase link --project-ref <ref>` and `npx supabase db push`, and run the `--push` import above.
@@ -55,8 +59,13 @@ Then redeploy so the new GeoJSON is served. The service-role key is only ever re
 ## Data sources
 
 - Tree data © City of Perth, [Trees in the City](https://www.data.gov.au/data/dataset/perth-trees-in-the-city) (CC BY).
+- Tree data © City of Fremantle, [Trees from Forestree](https://www.arcgis.com/home/item.html?id=6cf957db0a7346da8b99e6fb59691d31).
+- Tree data © City of Cockburn, [Street Trees](https://www.arcgis.com/home/item.html?id=4e25763b23fe47c1bb928920152789a9).
+- Tree data © Town of Bassendean, [All Trees](https://www.arcgis.com/home/item.html?id=5973d2d7b04648a4bb000fe13cc4db74).
 - Weather data by [Open-Meteo.com](https://open-meteo.com/) (CC BY 4.0).
 - Map by Mapbox and OpenStreetMap contributors.
+
+Fremantle, Cockburn and Bassendean share their tree layers publicly but state no licence. This non-commercial prototype shows them with credit; ask the councils for permission (for example CC BY 4.0, as the City of Perth uses) before a public launch.
 
 ## Based on Gieß den Kiez
 

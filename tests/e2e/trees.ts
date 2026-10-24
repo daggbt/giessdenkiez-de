@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import type { CouncilId } from "../../src/config/councils";
 import {
 	AgeClass,
 	classifyTreeAge,
@@ -24,6 +25,8 @@ interface FindTreeOptions {
 	now?: Date;
 	genus?: string;
 	precision?: PlantedDatePrecision;
+	/** Defaults to the City of Perth, whose trees come first in the file. */
+	council?: CouncilId;
 }
 
 /**
@@ -32,12 +35,18 @@ interface FindTreeOptions {
  */
 export function findTree(
 	ageClass: AgeClass,
-	{ now = new Date(), genus, precision }: FindTreeOptions = {},
+	{
+		now = new Date(),
+		genus,
+		precision,
+		council = "perth",
+	}: FindTreeOptions = {},
 ): TreeProperties {
 	const tree = collection.features
 		.map((feature) => feature.properties)
 		.find(
 			(properties) =>
+				properties.council === council &&
 				properties.common_name !== null &&
 				properties.genus !== null &&
 				(genus === undefined || properties.genus === genus) &&
@@ -51,7 +60,7 @@ export function findTree(
 		);
 	if (!tree) {
 		throw new Error(
-			`No ${ageClass} tree (${JSON.stringify({ genus, precision })}) found in public/data/trees.geojson`,
+			`No ${ageClass} tree (${JSON.stringify({ genus, precision, council })}) found in public/data/trees.geojson`,
 		);
 	}
 	return tree;
@@ -70,6 +79,22 @@ export function locateTrees(ageClass: AgeClass, now: Date): TreeLocation[] {
 			id: properties.id,
 			coordinates: geometry.coordinates,
 		}));
+}
+
+/** The westernmost, southernmost, easternmost and northernmost trees. */
+export function edgeTrees(): TreeLocation[] {
+	const trees = collection.features.map(({ properties, geometry }) => ({
+		id: properties.id,
+		coordinates: geometry.coordinates,
+	}));
+	const extreme = (score: (tree: TreeLocation) => number) =>
+		trees.reduce((best, tree) => (score(tree) > score(best) ? tree : best));
+	return [
+		extreme(({ coordinates: [lng] }) => -lng),
+		extreme(({ coordinates: [, lat] }) => -lat),
+		extreme(({ coordinates: [lng] }) => lng),
+		extreme(({ coordinates: [, lat] }) => lat),
+	];
 }
 
 /** Metres between two `[lng, lat]` points; precise enough within a city. */

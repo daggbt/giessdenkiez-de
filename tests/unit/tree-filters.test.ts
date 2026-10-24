@@ -20,6 +20,7 @@ const tree = (
 	properties: Partial<EnrichedTreeProperties>,
 ): EnrichedTreeProperties => ({
 	id: "1",
+	council: "perth",
 	genus: null,
 	common_name: null,
 	planted_date: null,

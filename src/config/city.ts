@@ -1,24 +1,26 @@
-// All City-of-Perth-specific domain constants live here.
+// The domain constants shared by all councils live here; each council's own
+// (name, links, how long it waters new trees) live in councils.ts.
 // Deployment-specific values (keys, URLs, map centre/zoom) live in .env.
 
 export const city = {
 	appName: "Perth Tree Watering", // TODO(confirm): working title (Q1)
-	councilName: "City of Perth",
+	// The area the councils are in, for texts about all of them.
+	areaName: "Perth",
 	timeZone: "Australia/Perth",
 	locale: "en-AU",
 
-	// Open-Meteo point for rain; Perth CBD.
+	// Open-Meteo point for rain; Perth CBD. All councils' trees are within 25 km of it.
 	weatherPoint: { lat: -31.9523, lng: 115.8613 },
 
 	// Inclusive, 1-based months; may wrap over New Year.
 	// TODO(confirm): volunteer watering season (Q2)
 	wateringSeason: { start: { month: 11, day: 1 }, end: { month: 4, day: 30 } },
 
-	// The City waters new trees for their first two years (City of Perth Urban Forest FAQ).
+	// Trees need residents' help from when their council stops watering them until this age.
 	// TODO(confirm): upper bound of "needs residents' help" (Q3)
-	ageBands: { councilCareMaxYears: 2, needsHelpMaxYears: 5 },
+	needsHelpMaxYears: 5,
 
-	// Date the inventory was bulk-captured; DATE_PLANTED on this day means "planted before".
+	// Date the City of Perth inventory was bulk-captured; DATE_PLANTED on this day means "planted before".
 	// TODO(confirm): Q5
 	inventoryCaptureDate: "2019-05-10",
 
@@ -33,12 +35,4 @@ export const city = {
 
 	// Sanity cap for a single watering entry (also enforced in the DB).
 	maxWateringLitres: 1000,
-
-	// TODO(confirm): exact page (Q6)
-	reportProblemUrl: "https://perth.wa.gov.au/",
-
-	dataAttribution: {
-		text: "Tree data © City of Perth, CC BY", // TODO(confirm): licence version (Q7)
-		url: "https://www.data.gov.au/data/dataset/perth-trees-in-the-city",
-	},
 } as const;

@@ -1,6 +1,7 @@
 import { expect } from "@playwright/test";
 import { testWithoutSplashScreen } from "../fixtures/test-without-splash-screen";
 import {
+	edgeTrees,
 	findTree,
 	IN_SEASON_DATE,
 	IN_SEASON_NOW,
@@ -13,7 +14,7 @@ testWithoutSplashScreen.use({ mapMode: "stubbed" });
 
 testWithoutSplashScreen.describe("Map", () => {
 	testWithoutSplashScreen(
-		"should load the City of Perth trees",
+		"should load the trees of every council",
 		async ({ page }) => {
 			await page.goto("/map");
 
@@ -22,7 +23,52 @@ testWithoutSplashScreen.describe("Map", () => {
 				.poll(async () => Number(await map.getAttribute("data-tree-count")), {
 					timeout: 20_000,
 				})
-				.toBeGreaterThanOrEqual(15_000);
+				.toBeGreaterThanOrEqual(125_000);
+
+			const councils = await page.evaluate(() => {
+				const store = (
+					window as unknown as {
+						__treesLayer: {
+							getState: () => {
+								data: {
+									features: Array<{ properties: { council: string } }>;
+								};
+							};
+						};
+					}
+				).__treesLayer.getState();
+				return [
+					...new Set(store.data.features.map((f) => f.properties.council)),
+				];
+			});
+			expect(councils.sort()).toEqual(
+				["bassendean", "cockburn", "fremantle", "perth"].sort(),
+			);
+		},
+	);
+
+	testWithoutSplashScreen(
+		"should reach the trees at the edges of the councils' area",
+		async ({ page }) => {
+			for (const {
+				coordinates: [lng, lat],
+			} of edgeTrees()) {
+				await page.goto(`/map?lat=${lat}&lng=${lng}&zoom=17`);
+				await expect(page.getByTestId("map")).not.toHaveAttribute(
+					"data-tree-count",
+					"0",
+				);
+				// Not held back by the map's bounds
+				const centre = await page.evaluate(() =>
+					(
+						window as unknown as {
+							__map: { getCenter: () => { lng: number; lat: number } };
+						}
+					).__map.getCenter(),
+				);
+				expect(centre.lng).toBeCloseTo(lng, 3);
+				expect(centre.lat).toBeCloseTo(lat, 3);
+			}
 		},
 	);
 

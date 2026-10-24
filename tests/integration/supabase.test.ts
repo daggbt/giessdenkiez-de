@@ -116,6 +116,25 @@ describe.skipIf(!reachable)("Supabase schema, RLS and RPCs", () => {
 			expect(data).toHaveLength(1);
 		});
 
+		test("can read every council's trees", async () => {
+			for (const council of ["perth", "fremantle", "cockburn", "bassendean"]) {
+				const { count, error } = await anon
+					.from("trees")
+					.select("id", { count: "exact", head: true })
+					.eq("council", council);
+				expect(error).toBeNull();
+				expect(count).toBeGreaterThan(1000);
+			}
+		});
+
+		test("trees belong to a known council", async () => {
+			const { error } = await admin
+				.from("trees")
+				.update({ council: "stirling" })
+				.eq("id", treeIds[0]);
+			expect(error?.message).toContain("trees_council_check");
+		});
+
 		test("cannot write trees", async () => {
 			const { error } = await anon
 				.from("trees")
