@@ -1,24 +1,59 @@
 import { city } from "../config/city";
 
 /**
- * The current instant. In dev builds (and in the production-like builds used by
- * the end-to-end tests, `VITE_PW_TEST=true`) a `?now=YYYY-MM-DD` URL parameter
- * overrides it, so the in-season UI can be tested outside the season.
+ * The current instant, unless the app is told which day it is, so that the
+ * in-season UI can be seen and tested outside the season:
+ *
+ * - `?now=YYYY-MM-DD` in the URL, in dev builds and in the production-like
+ *   builds of the end-to-end tests (`VITE_PW_TEST=true`), which set their
+ *   dates this way;
+ * - `VITE_APP_DATE=YYYY-MM-DD` when starting or building the app, e.g.
+ *   `VITE_APP_DATE=2027-01-15 npm run dev`. The tests ignore it.
+ *
+ * Either means midday of that day in the city, which avoids edge effects. Only
+ * the season and the trees' ages go by it; waterings and rain keep real dates.
  */
 export function getNow(): Date {
-	const isOverrideAllowed =
-		import.meta.env?.DEV || import.meta.env?.VITE_PW_TEST === "true";
-	if (isOverrideAllowed && typeof window !== "undefined") {
-		const override = new URL(window.location.href).searchParams.get("now");
-		if (override && /^\d{4}-\d{2}-\d{2}$/.test(override)) {
-			// Midday in the city's time zone (UTC+8 in Perth) avoids edge effects.
-			const date = new Date(`${override}T12:00:00+08:00`);
-			if (!Number.isNaN(date.getTime())) {
-				return date;
-			}
+	const isTest =
+		import.meta.env?.MODE === "test" ||
+		import.meta.env?.VITE_PW_TEST === "true";
+	if ((import.meta.env?.DEV || isTest) && typeof window !== "undefined") {
+		const override = parseCityDate(
+			new URL(window.location.href).searchParams.get("now"),
+		);
+		if (override) {
+			return override;
 		}
 	}
-	return new Date();
+	return (isTest ? null : getAppDate()) ?? new Date();
+}
+
+let appDate: Date | null | undefined;
+
+/** `VITE_APP_DATE`, read once; null when it is not set or not a date. */
+function getAppDate(): Date | null {
+	if (appDate === undefined) {
+		const value: string | undefined = import.meta.env?.VITE_APP_DATE;
+		appDate = parseCityDate(value) ?? null;
+		if (value && !appDate) {
+			console.warn(
+				`VITE_APP_DATE=${value} is not a date like 2027-01-15, so the app uses today's date.`,
+			);
+		}
+	}
+	return appDate;
+}
+
+/** Midday of a city-local `YYYY-MM-DD`; undefined for anything else. */
+export function parseCityDate(
+	value: string | null | undefined,
+): Date | undefined {
+	if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+		return undefined;
+	}
+	const instant = cityDateToInstant(value);
+	// Date.UTC would turn 2027-02-30 into a day in March.
+	return toCityDateString(instant) === value ? instant : undefined;
 }
 
 /**

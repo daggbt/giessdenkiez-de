@@ -19,7 +19,9 @@ npm run dev
 
 When new files arrive in `supabase/migrations`, run `npx supabase migration up`: it applies them and keeps your local accounts and data, while `db reset` starts from scratch.
 
-`npx supabase status` prints the local API URL, keys and the mail UI (confirmation and reset emails land there). Put the local service-role key in `TEST_SUPABASE_SERVICE_ROLE_KEY` for the end-to-end tests. Add `?now=2027-01-15` to the URL in dev to see the app inside the watering season.
+`npx supabase status` prints the local API URL, keys and the mail UI (confirmation and reset emails land there). Put the local service-role key in `TEST_SUPABASE_SERVICE_ROLE_KEY` for the end-to-end tests.
+
+To see the app inside the watering season, tell it which day it is: `VITE_APP_DATE=2027-01-15 npm run dev`. Without it, the app uses today's date. Only the season and the trees' ages follow that date; waterings and rain keep their real dates, so yellow trees appear once someone logs a watering. In dev, `?now=2027-01-15` in the URL does the same for one page load. `npm run build` builds `VITE_APP_DATE` into the app, so leave it unset for a real deployment.
 
 Scripts:
 
